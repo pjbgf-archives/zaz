@@ -44,18 +44,3 @@ func TestCli_GetCommand(t *testing.T) {
 
 	assertThat("should get 'from-go' subcommand", []string{"zaz", "seccomp", "from-go"})
 }
-
-func TestCli_FromGo_Integration(t *testing.T) {
-	t.Run("should return profile for go app", func(t *testing.T) {
-		should := should.New(t)
-		args := []string{"zaz", "seccomp", "from-go", "test/simple-app"}
-		var output bytes.Buffer
-
-		err := Run(&output, args)
-		got := output.String()
-		wanted := `{ defaultAction = "" }`
-
-		should.NotError(err, "should return profile for go app")
-		should.BeEqual(wanted, got, "should return profile for go app")
-	})
-}
