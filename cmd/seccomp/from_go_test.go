@@ -34,5 +34,5 @@ func TestGetSystemCalls_Integration(t *testing.T) {
 	}
 
 	should.NotError(err, "should get list of calls with ActAllow")
-	should.BeEqual(&expected, actual, "should get list of calls with ActAllow")
+	should.BeEqual(expected, actual, "should get list of calls with ActAllow")
 }

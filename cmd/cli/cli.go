@@ -17,7 +17,7 @@ func Run(output io.Writer, args []string) error {
 
 	cmd, err := getCommand(args)
 	if err != nil {
-		output.Write([]byte(usageMessage))
+		_, _ = output.Write([]byte(usageMessage))
 		return errors.New(invalidSyntaxMessage)
 	}
 

@@ -30,6 +30,6 @@ func parseFromGoFlags(args []string) (filePath string, err error) {
 }
 
 func (s *seccompFromGo) run(output io.Writer) error {
-	output.Write([]byte(`{ defaultAction = "" }`))
-	return nil
+	_, err := output.Write([]byte(`{ defaultAction = "" }`))
+	return err
 }
