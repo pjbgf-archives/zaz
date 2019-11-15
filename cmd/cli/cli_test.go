@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/pjbgf/zaz/pkg/should"
+	"github.com/pjbgf/should"
 )
 
 func TestCli_InvalidSyntax(t *testing.T) {

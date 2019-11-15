@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pjbgf/zaz/pkg/should"
+	"github.com/pjbgf/should"
 )
 
 func TestMain_Integration(t *testing.T) {

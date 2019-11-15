@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/pjbgf/zaz/pkg/should"
+	"github.com/pjbgf/should"
 )
 
 func TestNewSeccompFromGo(t *testing.T) {

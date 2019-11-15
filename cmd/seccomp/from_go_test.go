@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pjbgf/zaz/pkg/should"
+	"github.com/pjbgf/should"
 )
 
 func TestGetSystemCalls_Integration(t *testing.T) {
