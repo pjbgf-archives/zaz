@@ -52,7 +52,16 @@ func TestGetArchitectures(t *testing.T) {
 		should.BeEqual(expected, actual, assumption)
 	}
 
+	assertThat("should return empty archs for no target architectures",
+		[]string{},
+		[]specs.Arch{})
 	assertThat("should support amd64",
 		[]string{"amd64"},
 		[]specs.Arch{specs.ArchX86_64, specs.ArchX86, specs.ArchX32})
+	assertThat("should support arm64",
+		[]string{"arm64"},
+		[]specs.Arch{specs.ArchARM, specs.ArchAARCH64})
+	assertThat("should combine multiple architectures",
+		[]string{"amd64", "arm64"},
+		[]specs.Arch{specs.ArchX86_64, specs.ArchX86, specs.ArchX32, specs.ArchARM, specs.ArchAARCH64})
 }

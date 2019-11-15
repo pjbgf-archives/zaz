@@ -44,6 +44,8 @@ func getArchitectures(targetArchitectures []string) []specs.Arch {
 		switch arch {
 		case "amd64":
 			arches = append(arches, specs.ArchX86_64, specs.ArchX86, specs.ArchX32)
+		case "arm64":
+			arches = append(arches, specs.ArchARM, specs.ArchAARCH64)
 		}
 	}
 
