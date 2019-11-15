@@ -5,6 +5,18 @@ import (
 	"io"
 )
 
+func newSeccompSubCommand(args []string) (cliCommand, error) {
+
+	if len(args) > 1 {
+		switch args[1] {
+		case "from-go":
+			return newSeccompFromGo(args[1:])
+		}
+	}
+
+	return nil, errors.New("command not found")
+}
+
 type seccompFromGo struct {
 	filePath string
 }

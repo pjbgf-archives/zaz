@@ -33,12 +33,7 @@ func getCommand(args []string) (cliCommand, error) {
 	if len(args) >= 2 {
 		switch args[1] {
 		case "seccomp":
-
-			switch args[2] {
-			case "from-go":
-				return newSeccompFromGo(args[2:])
-			}
-
+			return newSeccompSubCommand(args[1:])
 		}
 	}
 
