@@ -10,10 +10,11 @@ type Seccomp struct {
 }
 
 // NewSeccomp initialises a new Seccomp.
-func NewSeccomp() *Seccomp {
+func NewSeccomp(syscallsSource SyscallsSource) *Seccomp {
 	return &Seccomp{
 		defaultAction:       specs.ActErrno,
 		targetArchitectures: []string{"amd64"},
+		source:              syscallsSource,
 	}
 }
 

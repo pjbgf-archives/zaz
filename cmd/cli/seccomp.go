@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
+
+	"github.com/pjbgf/zaz/cmd/seccomp"
 )
 
 func newSeccompSubCommand(args []string) (cliCommand, error) {
@@ -42,6 +45,18 @@ func parseFromGoFlags(args []string) (filePath string, err error) {
 }
 
 func (s *seccompFromGo) run(output io.Writer) error {
-	_, err := output.Write([]byte(`{ defaultAction = "" }`))
+	source := seccomp.NewSyscallsFromGo(s.filePath)
+	scmp := seccomp.NewSeccomp(source)
+	p, err := scmp.GetProfile()
+	if err != nil {
+		return err
+	}
+
+	json, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+
+	_, err = output.Write([]byte(json))
 	return err
 }

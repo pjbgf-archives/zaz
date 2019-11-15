@@ -26,8 +26,8 @@ func (s *syscallsSourceStub) GetSystemCalls() (specs.LinuxSyscall, error) {
 
 func TestGetProfile(t *testing.T) {
 	should := should.New(t)
-	seccomp := NewSeccomp()
-	seccomp.source = newSyscallsSourceStub([]string{"abc", "def"})
+	source := newSyscallsSourceStub([]string{"abc", "def"})
+	seccomp := NewSeccomp(source)
 
 	actual, err := seccomp.GetProfile()
 	expected := &specs.LinuxSeccomp{
