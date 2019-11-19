@@ -20,7 +20,7 @@ func NewSeccomp(syscallsSource SyscallsSource) *Seccomp {
 
 // SyscallsSource defines the interface for syscalls sources.
 type SyscallsSource interface {
-	GetSystemCalls() (specs.LinuxSyscall, error)
+	GetSystemCalls() (*specs.LinuxSyscall, error)
 }
 
 // GetProfile returns a seccomp profile based on the source defined.
@@ -30,11 +30,15 @@ func (s *Seccomp) GetProfile() (*specs.LinuxSeccomp, error) {
 		return nil, err
 	}
 
+	if syscalls == nil {
+		return nil, nil
+	}
+
 	arches := getArchitectures(s.targetArchitectures)
 	return &specs.LinuxSeccomp{
 		DefaultAction: s.defaultAction,
 		Architectures: arches,
-		Syscalls:      []specs.LinuxSyscall{syscalls},
+		Syscalls:      []specs.LinuxSyscall{*syscalls},
 	}, nil
 }
 

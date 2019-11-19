@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pjbgf/should"
+	"github.com/pjbgf/go-test/should"
 )
 
 func TestGetSystemCalls_Integration(t *testing.T) {
@@ -13,7 +13,7 @@ func TestGetSystemCalls_Integration(t *testing.T) {
 	s := NewSyscallsFromGo("../../test/simple-app")
 	actual, err := s.GetSystemCalls()
 
-	expected := specs.LinuxSyscall{
+	expected := &specs.LinuxSyscall{
 		Action: specs.ActAllow,
 		Names: []string{
 			"sched_yield",

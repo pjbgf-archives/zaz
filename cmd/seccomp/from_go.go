@@ -11,7 +11,7 @@ type SyscallsFromGo struct {
 	action   specs.LinuxSeccompAction
 }
 
-// NewSyscallsFromGo initialises and returns a new syscallsFromGo
+// NewSyscallsFromGo initialises and returns a new SyscallsFromGo
 func NewSyscallsFromGo(filePath string) *SyscallsFromGo {
 	return &SyscallsFromGo{
 		filePath: filePath,
@@ -20,11 +20,11 @@ func NewSyscallsFromGo(filePath string) *SyscallsFromGo {
 }
 
 // GetSystemCalls returns all system calls found in the go executable specified at filePath.
-func (s *SyscallsFromGo) GetSystemCalls() (specs.LinuxSyscall, error) {
+func (s *SyscallsFromGo) GetSystemCalls() (*specs.LinuxSyscall, error) {
 	source := systract.NewExeReader(s.filePath)
 	syscalls, err := systract.Extract(source)
 	if err != nil {
-		return specs.LinuxSyscall{}, err
+		return nil, err
 	}
 
 	r := specs.LinuxSyscall{
@@ -36,5 +36,5 @@ func (s *SyscallsFromGo) GetSystemCalls() (specs.LinuxSyscall, error) {
 		r.Names = append(r.Names, syscall.Name)
 	}
 
-	return r, nil
+	return &r, nil
 }

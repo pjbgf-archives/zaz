@@ -6,9 +6,10 @@ import (
 	"github.com/pjbgf/zaz/cmd/cli"
 )
 
+var onError func(err error) = func(err error) {
+	os.Exit(1)
+}
+
 func main() {
-	err := cli.Run(os.Stdout, os.Args)
-	if err != nil {
-		os.Exit(1)
-	}
+	cli.Run(os.Stdout, os.Args, onError)
 }

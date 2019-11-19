@@ -4,21 +4,25 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/pjbgf/should"
+	"github.com/pjbgf/go-test/should"
 )
 
 func TestCli_InvalidSyntax(t *testing.T) {
 	assertThat := func(assumption string, args []string) {
 		should := should.New(t)
 		var output bytes.Buffer
+		var actualErr error
 
-		err := Run(&output, args)
+		Run(&output, args, func(err error) {
+			actualErr = err
+		})
+
 		got := output.String()
 		wanted := `Usage:
 	zaz seccomp [command] [flags]
 `
 
-		should.Error(err, assumption)
+		should.Error(actualErr, assumption)
 		should.BeEqual(got, wanted, assumption)
 	}
 
@@ -28,19 +32,19 @@ func TestCli_InvalidSyntax(t *testing.T) {
 }
 
 func TestCli_GetCommand(t *testing.T) {
-	assertThat := func(assumption string, args []string) {
+	assertThat := func(assumption string, args []string, expected interface{}) {
 		should := should.New(t)
 		var output bytes.Buffer
 
 		cmdGot, err := getCommand(args)
 		outputGot := output.String()
 		outputWanted := ""
-		cmdWanted, _ := newSeccompFromGo(args)
 
 		should.NotError(err, assumption)
-		should.BeEqual(outputGot, outputWanted, assumption)
-		should.HaveSameType(cmdGot, cmdWanted, assumption)
+		should.BeEqual(outputWanted, outputGot, assumption)
+		should.HaveSameType(expected, cmdGot, assumption)
 	}
 
+	assertThat("should get 'from-go' subcommand", []string{"zaz", "seccomp", "from-go"}, &seccompFromGo{})
 	assertThat("should get 'from-go' subcommand", []string{"zaz", "seccomp", "from-go"})
 }

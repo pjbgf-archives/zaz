@@ -13,15 +13,18 @@ var (
 )
 
 // Run parses the cli arguments, identify the right command and executes it.
-func Run(output io.Writer, args []string) error {
-
+func Run(output io.Writer, args []string, onError func(err error)) {
 	cmd, err := getCommand(args)
 	if err != nil {
 		_, _ = output.Write([]byte(usageMessage))
-		return errors.New(invalidSyntaxMessage)
+		onError(errors.New(invalidSyntaxMessage))
+		return
 	}
 
-	return cmd.run(output)
+	err = cmd.run(output)
+	if err != nil {
+		onError(err)
+	}
 }
 
 type cliCommand interface {

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pjbgf/should"
+	"github.com/pjbgf/go-test/should"
 )
 
 // syscallsSourceStub is a stub of SyscallsSource.
@@ -17,8 +17,8 @@ func newSyscallsSourceStub(names []string) *syscallsSourceStub {
 }
 
 // GetSystemCalls stubs an
-func (s *syscallsSourceStub) GetSystemCalls() (specs.LinuxSyscall, error) {
-	return specs.LinuxSyscall{
+func (s *syscallsSourceStub) GetSystemCalls() (*specs.LinuxSyscall, error) {
+	return &specs.LinuxSyscall{
 		Names:  s.names,
 		Action: specs.ActAllow,
 	}, nil
