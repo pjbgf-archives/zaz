@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/pjbgf/zaz/cmd/seccomp"
+	"github.com/pjbgf/zaz/pkg/seccomp"
 )
 
 func newSeccompSubCommand(args []string) (cliCommand, error) {
