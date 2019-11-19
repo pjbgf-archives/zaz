@@ -46,5 +46,5 @@ func TestCli_GetCommand(t *testing.T) {
 	}
 
 	assertThat("should get 'from-go' subcommand", []string{"zaz", "seccomp", "from-go"}, &seccompFromGo{})
-	assertThat("should get 'from-go' subcommand", []string{"zaz", "seccomp", "from-go"})
+	assertThat("should get 'from-log' subcommand", []string{"zaz", "seccomp", "from-log", "123"}, &seccompFromLog{})
 }
