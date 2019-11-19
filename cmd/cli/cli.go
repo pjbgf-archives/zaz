@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	invalidSyntaxMessage string = "invalid syntax "
+	invalidSyntaxMessage string = "invalid syntax"
 	usageMessage         string = `Usage:
 	zaz seccomp [command] [flags]
 `
@@ -45,18 +45,17 @@ func (c *Console) exitOnError(writer io.Writer, err error) {
 	c.exit(1)
 }
 
-// Run parses the cli arguments, identify the right command and executes it.
+// Run runs the console application.
 func (c *Console) Run(args []string) {
-	cmd, err := getCommand(args)
+	cmd, err := c.commandFactory(args)
 	if err != nil {
-		_, _ = c.stdOut.Write([]byte(usageMessage))
-		c.exitOnError(c.stdErr, errors.New(invalidSyntaxMessage))
-		return
-	}
-
-	err = cmd.run(c.stdOut)
-	if err != nil {
+		printf(c.stdErr, usageMessage)
 		c.exitOnError(c.stdErr, err)
+	} else {
+		err = cmd.run(c.stdOut)
+		if err != nil {
+			c.exitOnError(c.stdErr, err)
+		}
 	}
 }
 

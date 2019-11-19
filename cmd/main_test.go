@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,23 +13,23 @@ import (
 
 func TestMain_Integration(t *testing.T) {
 	assertThat := func(assumption string, args []string, expected string) {
-		tmpfile, err := ioutil.TempFile("", "fakestdout.*")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer os.Remove(tmpfile.Name())
-
 		should := should.New(t)
-		var actualErr error
-		os.Stdout = tmpfile
+		stdout, err := ioutil.TempFile("", "fakestdout.*")
+		if err != nil {
+			t.Log("error creating temporary file")
+			t.FailNow()
+		}
+		defer os.Remove(stdout.Name())
+
+		os.Stdout = stdout
 		os.Args = args
 
 		main()
 
-		contents, err := ioutil.ReadFile(tmpfile.Name())
+		contents, err := ioutil.ReadFile(stdout.Name())
 		actual := string(contents)
 
-		should.NotError(actualErr, assumption)
+		should.NotError(err, assumption)
 		should.BeEqual(expected, actual, assumption)
 	}
 
@@ -66,7 +65,7 @@ func TestMain_ErrorCodes(t *testing.T) {
 		should.BeEqual(expectedOutput, actualOutput, assumption)
 	}
 
-	assertThat("should exit with code 1 if no args provided", "zaz", "exit status 1", "Usage:\n\tzaz seccomp [command] [flags]\nerror: invalid syntax \n")
+	assertThat("should exit with code 1 if no args provided", "zaz", "exit status 1", "Usage:\n\tzaz seccomp [command] [flags]\nerror: invalid syntax\n")
 }
 
 func TestMain_ErrorCodes_Inception(t *testing.T) {

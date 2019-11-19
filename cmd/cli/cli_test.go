@@ -2,6 +2,9 @@ package cli
 
 import (
 	"bytes"
+	"errors"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/pjbgf/go-test/should"
@@ -29,45 +32,55 @@ func TestNewConsole(t *testing.T) {
 	assertThat("should not panic if stdErr and stdOut are not nil", &stdOut, &stdErr, false)
 }
 
-func TestCli_InvalidSyntax(t *testing.T) {
-	assertThat := func(assumption string, args []string) {
+type commandStub struct {
+	hasExecuted bool
+	err         error
+}
+
+func (c *commandStub) run(output io.Writer) error {
+	c.hasExecuted = true
+	return c.err
+}
+
+func TestRun(t *testing.T) {
+	assertThat := func(assumption string, factoryErr, cmdErr error, errored, executedCmd bool) {
 		should := should.New(t)
-		var stdOutput, stdError bytes.Buffer
-		var hasErrored bool
+		var (
+			hasErrored     bool = false
+			stdOut, stdErr bytes.Buffer
+		)
+		stub := &commandStub{err: cmdErr}
+		c := NewConsole(&stdOut, &stdErr, func(code int) { hasErrored = true })
+		c.commandFactory = func(args []string) (cliCommand, error) {
+			return stub, factoryErr
+		}
 
-		c := NewConsole(&stdOutput, &stdError, func(code int) {
-			hasErrored = true
-		})
-		c.Run(args)
+		c.Run([]string{})
 
-		got := stdOutput.String()
-		wanted := `Usage:
-	zaz seccomp [command] [flags]
-`
-
-		should.BeTrue(hasErrored, assumption)
-		should.BeEqual(got, wanted, assumption)
+		should.BeEqual(errored, hasErrored, assumption)
+		should.BeEqual(executedCmd, stub.hasExecuted, assumption)
 	}
 
-	assertThat("should error and print usage for invalid commands", []string{"zaz", "something"})
-	assertThat("should error and print usage for not enough arguments", []string{"zaz"})
-	assertThat("should error and print usage for empty arguments", []string{})
+	assertThat("should not run command when get error", errors.New("some error"), nil, true, false)
+	assertThat("should run command when no errors", nil, nil, false, true)
+	assertThat("should handle command errors", nil, errors.New("cmd error"), true, true)
 }
 
 func TestCli_GetCommand(t *testing.T) {
-	assertThat := func(assumption string, args []string, expected interface{}) {
+	assertThat := func(assumption string, command string, expected interface{}, expectedErr error) {
 		should := should.New(t)
 		var output bytes.Buffer
 
-		cmdGot, err := getCommand(args)
+		cmdGot, err := getCommand(strings.Split(command, " "))
 		outputGot := output.String()
 		outputWanted := ""
 
-		should.NotError(err, assumption)
+		should.BeEqual(expectedErr, err, assumption)
 		should.BeEqual(outputWanted, outputGot, assumption)
 		should.HaveSameType(expected, cmdGot, assumption)
 	}
 
-	assertThat("should get 'from-go' subcommand", []string{"zaz", "seccomp", "from-go"}, &seccompFromGo{})
-	assertThat("should get 'from-log' subcommand", []string{"zaz", "seccomp", "from-log", "123"}, &seccompFromLog{})
+	assertThat("should get 'from-go' subcommand", "zaz seccomp from-go /tmp/file", &seccompFromGo{}, nil)
+	assertThat("should get 'from-log' subcommand", "zaz seccomp from-log 123", &seccompFromLog{}, nil)
+	assertThat("should error for invalid command", "zaz something", nil, errors.New("invalid syntax"))
 }
