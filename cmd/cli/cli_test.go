@@ -7,22 +7,45 @@ import (
 	"github.com/pjbgf/go-test/should"
 )
 
+func TestNewConsole(t *testing.T) {
+	assertThat := func(assumption string, stdOut, stdErr *bytes.Buffer, shouldError bool) {
+		should := should.New(t)
+		hasErrored := false
+
+		defer func() {
+			if r := recover(); r != nil {
+				hasErrored = true
+			}
+		}()
+
+		NewConsole(stdOut, stdErr, func(int) {})
+
+		should.BeEqual(shouldError, hasErrored, assumption)
+	}
+
+	var stdOut, stdErr bytes.Buffer
+	assertThat("should panic for nil stdOut", nil, &stdErr, true)
+	assertThat("should panic for nil stdErr", &stdOut, nil, true)
+	assertThat("should not panic if stdErr and stdOut are not nil", &stdOut, &stdErr, false)
+}
+
 func TestCli_InvalidSyntax(t *testing.T) {
 	assertThat := func(assumption string, args []string) {
 		should := should.New(t)
-		var output bytes.Buffer
-		var actualErr error
+		var stdOutput, stdError bytes.Buffer
+		var hasErrored bool
 
-		Run(&output, args, func(err error) {
-			actualErr = err
+		c := NewConsole(&stdOutput, &stdError, func(code int) {
+			hasErrored = true
 		})
+		c.Run(args)
 
-		got := output.String()
+		got := stdOutput.String()
 		wanted := `Usage:
 	zaz seccomp [command] [flags]
 `
 
-		should.Error(actualErr, assumption)
+		should.BeTrue(hasErrored, assumption)
 		should.BeEqual(got, wanted, assumption)
 	}
 
