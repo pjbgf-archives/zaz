@@ -11,17 +11,17 @@ import (
 
 // SyscallsFromLog represents a syscalls source from syslog files.
 type SyscallsFromLog struct {
-	action     specs.LinuxSeccompAction
-	reader     io.Reader
-	processIDs []int
+	action    specs.LinuxSeccompAction
+	reader    io.Reader
+	processID int
 }
 
 // NewSyscallsFromLog initialises and returns a new SyscallsFromLog
-func NewSyscallsFromLog(reader io.Reader, processIDs []int) *SyscallsFromLog {
+func NewSyscallsFromLog(reader io.Reader, processID int) *SyscallsFromLog {
 	return &SyscallsFromLog{
 		specs.ActAllow,
 		reader,
-		processIDs,
+		processID,
 	}
 }
 
@@ -57,7 +57,7 @@ func (s *SyscallsFromLog) getSystemCallsFromLog() ([]string, error) {
 	syscalls := make([]string, 0)
 
 	for scan.Scan() {
-		id := s.extractSyscallID(scan.Text(), s.processIDs)
+		id := s.extractSyscallID(scan.Text(), s.processID)
 		if id > -1 {
 			if _, ok := trackUnique[id]; !ok {
 				trackUnique[id] = ""
@@ -74,22 +74,14 @@ func (s *SyscallsFromLog) getSystemCallsFromLog() ([]string, error) {
 	return syscalls, nil
 }
 
-func (*SyscallsFromLog) extractSyscallID(logLine string, processIDs []int) int {
+func (*SyscallsFromLog) extractSyscallID(logLine string, processID int) int {
 	syscallID := -1
 
-	if logLine == "" || len(processIDs) == 0 || processIDs[0] < 0 {
+	if logLine == "" {
 		return syscallID
 	}
 
-	pidRegex := strconv.Itoa(processIDs[0])
-	if len(processIDs) > 1 {
-		pidRegex = "(" + pidRegex
-		for _, pid := range processIDs[1:] {
-			pidRegex = pidRegex + "|" + strconv.Itoa(pid)
-		}
-		pidRegex = pidRegex + ")"
-	}
-
+	pidRegex := strconv.Itoa(processID)
 	re := regexp.MustCompile(`(?:audit:.+pid=` + pidRegex + `\b).+syscall=(\b\d+\b)`)
 	captures := re.FindStringSubmatch(logLine)
 

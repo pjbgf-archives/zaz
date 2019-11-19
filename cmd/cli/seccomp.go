@@ -42,7 +42,7 @@ func newSeccompFromLog(args []string) (*seccompFromLog, error) {
 	if err != nil {
 		return nil, fmt.Errorf("syslog file '%s' not found", syslogPath)
 	}
-	source := seccomp.NewSyscallsFromLog(file, []int{processID})
+	source := seccomp.NewSyscallsFromLog(file, processID)
 
 	return &seccompFromLog{
 		processSeccompSource,
