@@ -20,6 +20,8 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 			return newSeccompFromGo(args[1:])
 		case "from-log":
 			return newSeccompFromLog(args[1:])
+		case "brute-force":
+			return newBruteForce(args[1:])
 		}
 	}
 
@@ -130,6 +132,43 @@ func parseFromGoFlags(args []string) (filePath string, errorWhenEmpty bool, err 
 }
 
 func (s *seccompFromGo) run(output io.Writer) error {
+	return s.processSource(output, s.source, s.errorWhenEmpty)
+}
+
+type bruteForce struct {
+	processSource  func(io.Writer, seccomp.SyscallsSource, bool) error
+	source         seccomp.SyscallsSource
+	errorWhenEmpty bool
+}
+
+func newBruteForce(args []string) (*bruteForce, error) {
+	// dockerImage, command, errorWhenEmpty, err := parseBruteForceFlags(args)
+	_, _, errorWhenEmpty, err := parseBruteForceFlags(args)
+	if err != nil {
+		return nil, err
+	}
+
+	return &bruteForce{
+		processSeccompSource,
+		seccomp.NewBruteForceSource(),
+		errorWhenEmpty}, nil
+}
+
+func parseBruteForceFlags(args []string) (dockerImage, command string, errorWhenEmpty bool, err error) {
+	if len(args) == 0 {
+		err = errInvalidSyntax
+	} else {
+		for _, arg := range args[:len(args)-1] {
+			if ifFlag(arg, "error-when-empty") {
+				errorWhenEmpty = true
+			}
+		}
+	}
+
+	return
+}
+
+func (s *bruteForce) run(output io.Writer) error {
 	return s.processSource(output, s.source, s.errorWhenEmpty)
 }
 
