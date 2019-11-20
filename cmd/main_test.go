@@ -55,7 +55,7 @@ func TestMain_ErrorCodes(t *testing.T) {
 		e, ok := err.(*exec.ExitError)
 
 		if !ok {
-			t.Log("was expecting exit code which did not happen")
+			t.Logf("\nassumption: %s\n  expected: %s\n    actual: exit status 0", assumption, expectedErr)
 			t.FailNow()
 		}
 
@@ -65,7 +65,11 @@ func TestMain_ErrorCodes(t *testing.T) {
 		should.BeEqual(expectedOutput, actualOutput, assumption)
 	}
 
-	assertThat("should exit with code 1 if no args provided", "zaz", "exit status 1", "Usage:\n\tzaz seccomp [command] [flags]\nerror: invalid syntax\n")
+	assertThat("should exit with code 1 if no args provided", "zaz",
+		"exit status 1", "Usage:\n\tzaz seccomp [command] [flags]\nerror: invalid syntax\n")
+	assertThat("should support return error code when empty profile",
+		"zaz seccomp from-log --error-when-empty --log-file=\"../test/syslog\" 1",
+		"exit status 2", "error: no system calls found\n")
 }
 
 func TestMain_ErrorCodes_Inception(t *testing.T) {

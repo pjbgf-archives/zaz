@@ -27,13 +27,14 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 }
 
 type seccompFromLog struct {
-	processSource func(output io.Writer, source seccomp.SyscallsSource) error
-	source        seccomp.SyscallsSource
+	processSource  func(io.Writer, seccomp.SyscallsSource, bool) error
+	source         seccomp.SyscallsSource
+	errorWhenEmpty bool
 }
 
 // newSeccompFromLog creates a new seccompFromLog command.
 func newSeccompFromLog(args []string) (*seccompFromLog, error) {
-	processID, syslogPath, err := parseFromLogFlags(args)
+	processID, syslogPath, errorWhenEmpty, err := parseFromLogFlags(args)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +55,13 @@ func newSeccompFromLog(args []string) (*seccompFromLog, error) {
 	return &seccompFromLog{
 		processSeccompSource,
 		source,
+		errorWhenEmpty,
 	}, nil
 }
 
-func parseFromLogFlags(args []string) (processID int, syslogPath string, err error) {
+func parseFromLogFlags(args []string) (processID int, syslogPath string, errorWhenEmpty bool, err error) {
 	if len(args) == 0 {
-		err = errors.New(invalidSyntaxMessage)
+		err = errInvalidSyntax
 	} else {
 		processID, err = strconv.Atoi(args[len(args)-1])
 		if err != nil {
@@ -71,6 +73,9 @@ func parseFromLogFlags(args []string) (processID int, syslogPath string, err err
 			if ifFlag(arg, "log-file") {
 				syslogPath = getFlagValue(arg, "log-file")
 			}
+			if ifFlag(arg, "error-when-empty") {
+				errorWhenEmpty = true
+			}
 		}
 	}
 
@@ -78,45 +83,66 @@ func parseFromLogFlags(args []string) (processID int, syslogPath string, err err
 }
 
 func (s *seccompFromLog) run(output io.Writer) error {
-	return s.processSource(output, s.source)
+	return s.processSource(output, s.source, s.errorWhenEmpty)
 }
 
 type seccompFromGo struct {
-	processSource func(output io.Writer, source seccomp.SyscallsSource) error
-	source        seccomp.SyscallsSource
+	processSource  func(io.Writer, seccomp.SyscallsSource, bool) error
+	source         seccomp.SyscallsSource
+	errorWhenEmpty bool
 }
 
 // newSeccompFromGo creates a new seccompFromGo command.
 func newSeccompFromGo(args []string) (*seccompFromGo, error) {
-	filePath, err := parseFromGoFlags(args)
+	inputPath, errorWhenEmpty, err := parseFromGoFlags(args)
 	if err != nil {
 		return nil, err
 	}
 
+	filePath, err := sanitiseFileName(inputPath)
+	if err != nil {
+		return nil, errors.New("error sanitising file name")
+	}
+
+	if !fileExists(filePath) {
+		return nil, fmt.Errorf("file '%s' not found", inputPath)
+	}
+
 	return &seccompFromGo{
 		processSeccompSource,
-		seccomp.NewSyscallsFromGo(filePath)}, nil
+		seccomp.NewSyscallsFromGo(filePath),
+		errorWhenEmpty}, nil
 }
 
-func parseFromGoFlags(args []string) (filePath string, err error) {
+func parseFromGoFlags(args []string) (filePath string, errorWhenEmpty bool, err error) {
 	if len(args) == 0 {
-		err = errors.New(invalidSyntaxMessage)
+		err = errInvalidSyntax
 	} else {
 		filePath = args[len(args)-1]
+		for _, arg := range args[:len(args)-1] {
+			if ifFlag(arg, "error-when-empty") {
+				errorWhenEmpty = true
+			}
+		}
 	}
 
 	return
 }
 
 func (s *seccompFromGo) run(output io.Writer) error {
-	return s.processSource(output, s.source)
+	return s.processSource(output, s.source, s.errorWhenEmpty)
 }
 
-func processSeccompSource(output io.Writer, source seccomp.SyscallsSource) error {
+func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, errorWhenEmpty bool) error {
 	scmp := seccomp.NewSeccomp(source)
+	scmp.NilProfileForNoCalls = errorWhenEmpty
 	p, err := scmp.GetProfile()
 	if err != nil {
 		return err
+	}
+	if errorWhenEmpty && p == nil {
+		printf(output, "error: no system calls found\n")
+		os.Exit(2)
 	}
 
 	json, err := json.Marshal(p)
@@ -129,7 +155,7 @@ func processSeccompSource(output io.Writer, source seccomp.SyscallsSource) error
 }
 
 func ifFlag(arg, flagName string) bool {
-	f := fmt.Sprintf("--%s=", flagName)
+	f := fmt.Sprintf("--%s", flagName)
 	return strings.HasPrefix(arg, f)
 }
 

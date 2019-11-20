@@ -4,9 +4,10 @@ import specs "github.com/opencontainers/runtime-spec/specs-go"
 
 // Seccomp represents the seccomp profile generation functionatily.
 type Seccomp struct {
-	defaultAction       specs.LinuxSeccompAction
-	targetArchitectures []string
-	source              SyscallsSource
+	defaultAction        specs.LinuxSeccompAction
+	targetArchitectures  []string
+	source               SyscallsSource
+	NilProfileForNoCalls bool
 }
 
 // NewSeccomp initialises a new Seccomp.
@@ -30,16 +31,20 @@ func (s *Seccomp) GetProfile() (*specs.LinuxSeccomp, error) {
 		return nil, err
 	}
 
-	if syscalls == nil || len(syscalls.Names) == 0 {
-		return nil, nil
+	if s.NilProfileForNoCalls {
+		if syscalls == nil || len(syscalls.Names) == 0 {
+			return nil, nil
+		}
 	}
 
 	arches := getArchitectures(s.targetArchitectures)
-	return &specs.LinuxSeccomp{
-		DefaultAction: s.defaultAction,
-		Architectures: arches,
-		Syscalls:      []specs.LinuxSyscall{*syscalls},
-	}, nil
+	r := specs.LinuxSeccomp{DefaultAction: s.defaultAction,
+		Architectures: arches}
+
+	if syscalls != nil {
+		r.Syscalls = []specs.LinuxSyscall{*syscalls}
+	}
+	return &r, nil
 }
 
 func getArchitectures(targetArchitectures []string) []specs.Arch {

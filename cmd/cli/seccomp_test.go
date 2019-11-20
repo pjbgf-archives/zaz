@@ -25,7 +25,7 @@ func TestNewSeccompSubCommand(t *testing.T) {
 		should.HaveSameType(expectedType, cmd, assumption)
 	}
 
-	assertThat("should return seccompFromGo command", "seccomp from-go", &seccompFromGo{}, nil)
+	assertThat("should return seccompFromGo command", "seccomp from-go ../../test/simple-app", &seccompFromGo{}, nil)
 	assertThat("should return seccompFromLog command", "seccomp from-log 123", &seccompFromLog{}, nil)
 	assertThat("should return error for invalid command", "seccomp blah", nil, errors.New("command not found"))
 }
@@ -63,18 +63,20 @@ func TestNewSeccompFromLog(t *testing.T) {
 
 func TestParseFromLogFlags(t *testing.T) {
 	assertThat := func(assumption string, args []string, expectedProcessID int,
-		expectedSyslogPath string, expectedErr error) {
+		expectedSyslogPath string, expectedErrorWhenEmpty bool, expectedErr error) {
 		should := should.New(t)
 
-		processID, syslogPath, err := parseFromLogFlags(args)
+		processID, syslogPath, errorWhenEmpty, err := parseFromLogFlags(args)
 
 		should.BeEqual(expectedErr, err, assumption)
 		should.BeEqual(expectedProcessID, processID, assumption)
 		should.BeEqual(expectedSyslogPath, syslogPath, assumption)
+		should.BeEqual(expectedErrorWhenEmpty, errorWhenEmpty, assumption)
 	}
 
-	assertThat("should use default syslogPath when not set", []string{"1"}, 1, "/var/log/syslog", nil)
-	assertThat("should overwrite default syslogPath when it is set", []string{"--log-file=/tmpfile", "2"}, 2, "/tmpfile", nil)
+	assertThat("should use default syslogPath when not set", []string{"1"}, 1, "/var/log/syslog", false, nil)
+	assertThat("should overwrite default syslogPath when it is set", []string{"--log-file=/tmpfile", "2"}, 2, "/tmpfile", false, nil)
+	assertThat("should get error-when-empty flag value", []string{"--error-when-empty", "2"}, 2, "/var/log/syslog", true, nil)
 }
 
 func TestSeccompFromLogRun(t *testing.T) {
@@ -85,7 +87,7 @@ func TestSeccompFromLogRun(t *testing.T) {
 		var actual *specs.LinuxSyscall
 		cmd, _ := newSeccompFromLog(strings.Split(command, " "))
 		cmd.source = newSyscallsSourceStub(injectedCalls, nil)
-		cmd.processSource = func(output io.Writer, source seccomp.SyscallsSource) (err error) {
+		cmd.processSource = func(output io.Writer, source seccomp.SyscallsSource, errorWhenEmpty bool) (err error) {
 			actual, err = source.GetSystemCalls()
 			return
 		}
@@ -111,8 +113,10 @@ func TestNewSeccompFromGo(t *testing.T) {
 		should.BeEqual(expected, actual, assumption)
 	}
 
-	assertThat("should error for less than one argument", []string{},
+	assertThat("should error when less than one argument", []string{},
 		nil, errors.New("invalid syntax"))
+	assertThat("should error when file not found", []string{"test/simple-app2"},
+		nil, errors.New("file 'test/simple-app2' not found"))
 }
 
 func TestSeccompFromGoRun(t *testing.T) {
@@ -123,7 +127,7 @@ func TestSeccompFromGoRun(t *testing.T) {
 		var actual *specs.LinuxSyscall
 		cmd, _ := newSeccompFromGo(strings.Split(command, " "))
 		cmd.source = newSyscallsSourceStub(injectedCalls, nil)
-		cmd.processSource = func(output io.Writer, source seccomp.SyscallsSource) (err error) {
+		cmd.processSource = func(output io.Writer, source seccomp.SyscallsSource, errorWhenEmpty bool) (err error) {
 			actual, err = source.GetSystemCalls()
 			return
 		}
@@ -147,7 +151,7 @@ func TestProcessSeccompSource(t *testing.T) {
 		should := should.New(t)
 		source := newSyscallsSourceStub(injectedCalls, injectedErr)
 
-		err := processSeccompSource(&output, source)
+		err := processSeccompSource(&output, source, false)
 
 		actual := output.String()
 		should.BeEqual(expectedErr, err, assumption)
@@ -160,6 +164,10 @@ func TestProcessSeccompSource(t *testing.T) {
 	assertThat("should stop if failed to get profile", nil,
 		"",
 		errors.New("error generating profile"), errors.New("error generating profile"))
+}
+
+func TestExitCode2ForEmptyProfile(t *testing.T) {
+	t.Skip("need to refactor to abstract os.Exit call")
 }
 
 type syscallsSourceStub struct {

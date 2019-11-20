@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	invalidSyntaxMessage string = "invalid syntax"
-	usageMessage         string = `Usage:
+	usageMessage string = `Usage:
 	zaz seccomp [command] [flags]
 `
+
+	errInvalidSyntax = errors.New("invalid syntax")
 )
 
 // Console represents a Console application.
@@ -49,7 +50,9 @@ func (c *Console) exitOnError(writer io.Writer, err error) {
 func (c *Console) Run(args []string) {
 	cmd, err := c.commandFactory(args)
 	if err != nil {
-		printf(c.stdErr, usageMessage)
+		if err == errInvalidSyntax {
+			printf(c.stdErr, usageMessage)
+		}
 		c.exitOnError(c.stdErr, err)
 	} else {
 		err = cmd.run(c.stdOut)
@@ -72,7 +75,7 @@ func getCommand(args []string) (cliCommand, error) {
 		}
 	}
 
-	return nil, errors.New(invalidSyntaxMessage)
+	return nil, errInvalidSyntax
 }
 
 func printf(writer io.Writer, format string, args ...interface{}) {

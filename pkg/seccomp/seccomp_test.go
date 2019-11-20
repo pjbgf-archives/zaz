@@ -27,11 +27,12 @@ func (s *syscallsSourceStub) GetSystemCalls() (*specs.LinuxSyscall, error) {
 }
 
 func TestGetProfile(t *testing.T) {
-	assertThat := func(assumption string, injectedCalls []string,
+	assertThat := func(assumption string, injectedCalls []string, nilProfileForNoCalls bool,
 		expected *specs.LinuxSeccomp, injectedErr, expectedErr error) {
 		should := should.New(t)
 		source := newSyscallsSourceStub(injectedCalls, injectedErr)
 		seccomp := NewSeccomp(source)
+		seccomp.NilProfileForNoCalls = nilProfileForNoCalls
 
 		actual, err := seccomp.GetProfile()
 
@@ -39,19 +40,22 @@ func TestGetProfile(t *testing.T) {
 		should.BeEqual(expected, actual, assumption)
 	}
 
-	assertThat("should return nil if no syscalls found", nil, nil, nil, nil)
-	assertThat("should error when source errors", nil, nil,
+	assertThat("should return nil when no syscalls found", nil, true, nil, nil, nil)
+	assertThat("should error when source errors", nil, true, nil,
 		errors.New("source errored"), errors.New("source errored"))
 
-	assertThat("should get profile when syscalls found",
-		[]string{"abc", "def"}, &specs.LinuxSeccomp{
+	assertThat("should return empty profile when no syscalls found", nil, false,
+		&specs.LinuxSeccomp{
 			DefaultAction: specs.ActErrno,
-			Architectures: []specs.Arch{
-				specs.ArchX86_64, specs.ArchX86, specs.ArchX32,
-			},
-			Syscalls: []specs.LinuxSyscall{
-				{Names: []string{"abc", "def"}, Action: specs.ActAllow},
-			},
+			Architectures: []specs.Arch{specs.ArchX86_64, specs.ArchX86, specs.ArchX32},
+			Syscalls:      []specs.LinuxSyscall{{Names: nil, Action: specs.ActAllow}}},
+		nil, nil)
+
+	assertThat("should get profile when syscalls found", []string{"abc", "def"}, true,
+		&specs.LinuxSeccomp{
+			DefaultAction: specs.ActErrno,
+			Architectures: []specs.Arch{specs.ArchX86_64, specs.ArchX86, specs.ArchX32},
+			Syscalls:      []specs.LinuxSyscall{{Names: []string{"abc", "def"}, Action: specs.ActAllow}},
 		},
 		nil, nil)
 }
