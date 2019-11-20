@@ -30,7 +30,7 @@ func (s *Seccomp) GetProfile() (*specs.LinuxSeccomp, error) {
 		return nil, err
 	}
 
-	if syscalls == nil {
+	if syscalls == nil || len(syscalls.Names) == 0 {
 		return nil, nil
 	}
 
