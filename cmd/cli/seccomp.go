@@ -40,7 +40,7 @@ func newSeccompFromLog(args []string) (*seccompFromLog, error) {
 
 	filePath, err := sanitiseFileName(syslogPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error sanitising file name")
 	}
 
 	/* #nosec file path has been sanitised */

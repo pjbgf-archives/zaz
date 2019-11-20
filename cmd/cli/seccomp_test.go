@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -41,6 +43,22 @@ func TestNewSeccompFromLog(t *testing.T) {
 	assertThat("should error for less than one argument", []string{}, nil, errors.New("invalid syntax"))
 	assertThat("should error for invalid pid", []string{"abc"}, nil, errors.New("invalid pid"))
 	assertThat("should error for syslog file not found", []string{"--log-file=\"/a/a\"", "1"}, nil, errors.New("syslog file '/a/a' not found"))
+
+	wdSnapshot, _ := os.Getwd()
+	// creates tmp folder to make the expected filepath more predictable
+	tmpFolder, err := ioutil.TempDir("", "zaz-test")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	os.Chdir(tmpFolder)
+	os.Remove(tmpFolder)
+	assertThat("should error when refering to a current folder that no longer exists",
+		[]string{"--log-file=\"./a\"", "1"}, nil,
+		errors.New("error sanitising file name"))
+
+	// returns snapshotted working directory to ensure other tests' repeatability
+	os.Chdir(wdSnapshot)
 }
 
 func TestParseFromLogFlags(t *testing.T) {
