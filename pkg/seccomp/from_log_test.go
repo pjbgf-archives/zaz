@@ -1,6 +1,7 @@
 package seccomp
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -9,9 +10,9 @@ import (
 )
 
 func TestGetSystemCalls(t *testing.T) {
-	assertThat := func(assumption, log string, processID int, expected *specs.LinuxSyscall, expectedErr error) {
+	assertThat := func(assumption, log string, processID int,
+		expected *specs.LinuxSyscall, expectedErr error) {
 		should := should.New(t)
-
 		reader := strings.NewReader(log)
 
 		s := NewSyscallsFromLog(reader, processID)
@@ -40,4 +41,10 @@ Nov 15 14:34:39 machine kernel: [26233.096393] audit: type=1326 audit(1573828479
 	`,
 		20,
 		nil, nil)
+
+	assertThat("should error if found invalid system call ID", `
+	Nov 15 14:34:39 machine kernel: [26233.096391] audit: type=1326 audit(1573828479.772:49): auid=4294967295 uid=0 gid=0 ses=4294967295 pid=15 comm="runc:[2:INIT]" exe="/" sig=0 arch=c000003e syscall=777 compat=0 ip=0x55a02e943be0 code=0x7ffc0000
+	`,
+		15,
+		nil, errors.New("syscall id 777 not supported"))
 }
