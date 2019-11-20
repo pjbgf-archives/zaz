@@ -2,8 +2,8 @@ github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3 h1:
 github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3/go.mod h1:nPpo7qLxd6XL3hWJG/O60sR8ZKfMCiIoNap5GvD12KU=
 github.com/opencontainers/runtime-spec v1.0.1 h1:wY4pOY8fBdSIvs9+IDHC55thBuEulhzfSgKeC1yFvzQ=
 github.com/opencontainers/runtime-spec v1.0.1/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
-github.com/pjbgf/go-test v0.2.0 h1:LGrNJKlc89+tXOvDFqfhJQVpf4Pze9BI0UjlZmhnagM=
-github.com/pjbgf/go-test v0.2.0/go.mod h1:b8ngLHvB0hxPp0hZdyg50o/x4SsRllStbClNV5g/5Vc=
+github.com/pjbgf/go-test v0.2.2 h1:7EffWC3B6i+ob/zsA9/B6lJq+baL4OqqO08P++t0unA=
+github.com/pjbgf/go-test v0.2.2/go.mod h1:b8ngLHvB0hxPp0hZdyg50o/x4SsRllStbClNV5g/5Vc=
 github.com/pjbgf/gosystract v1.0.1 h1:nFLTWxYYl0ID8X7uJ/6Bz/NsZBMpQyW1DLFuQKnr1eU=
 github.com/pjbgf/gosystract v1.0.1/go.mod h1:G7VZzL+Ixa6Y+vysThQfCfOXLF00p7F/wKHAFcTfB0Y=
 github.com/pjbgf/should v0.0.0-20191115095803-3cd81d87bbff h1:qCyymNW529Dl7lymMaKTXNVQTpKuWaSDBq2HgaLJWb8=
