@@ -1,6 +1,8 @@
 package seccomp
 
 import (
+	"errors"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pjbgf/gosystract/cmd/systract"
 )
@@ -24,7 +26,7 @@ func (s *SyscallsFromGo) GetSystemCalls() (*specs.LinuxSyscall, error) {
 	source := systract.NewExeReader(s.filePath)
 	syscalls, err := systract.Extract(source)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("could not extract syscalls")
 	}
 
 	r := specs.LinuxSyscall{
