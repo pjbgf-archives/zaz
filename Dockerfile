@@ -1,4 +1,4 @@
-FROM golang:1.12-buster as build
+FROM golang:1.13-buster as build
 
 LABEL repository="https://github.com/pjbgf/zaz/"
 LABEL maintainer="pjbgf@linux.com"
@@ -14,7 +14,7 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 RUN go mod download
 
-RUN go build -o /zaz
+RUN go build -o /zaz cmd/main.go
 
 
 FROM alpine 
