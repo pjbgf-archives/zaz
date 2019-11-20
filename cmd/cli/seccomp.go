@@ -38,10 +38,17 @@ func newSeccompFromLog(args []string) (*seccompFromLog, error) {
 		return nil, err
 	}
 
-	file, err := os.Open(syslogPath)
+	filePath, err := sanitiseFileName(syslogPath)
+	if err != nil {
+		return nil, err
+	}
+
+	/* #nosec file path has been sanitised */
+	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("syslog file '%s' not found", syslogPath)
 	}
+
 	source := seccomp.NewSyscallsFromLog(file, processID)
 
 	return &seccompFromLog{
