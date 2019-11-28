@@ -145,13 +145,13 @@ func TestSeccompFromGoRun(t *testing.T) {
 
 func TestProcessSeccompSource(t *testing.T) {
 	assertThat := func(assumption string, injectedCalls []string,
-		expected string, injectedErr, expectedErr error) {
+		expected string, injectedErr, expectedErr error, errWhenEmpty bool) {
 
 		var output bytes.Buffer
 		should := should.New(t)
 		source := newSyscallsSourceStub(injectedCalls, injectedErr)
 
-		err := processSeccompSource(&output, source, false)
+		err := processSeccompSource(&output, source, errWhenEmpty)
 
 		actual := output.String()
 		should.BeEqual(expectedErr, err, assumption)
@@ -160,14 +160,15 @@ func TestProcessSeccompSource(t *testing.T) {
 
 	assertThat("should print call into output", []string{"call1"},
 		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["call1"],"action":""}]}`,
-		nil, nil)
+		nil, nil, false)
 	assertThat("should stop if failed to get profile", nil,
 		"",
-		errors.New("error generating profile"), errors.New("error generating profile"))
-}
-
-func TestExitCode2ForEmptyProfile(t *testing.T) {
-	t.Skip("need to refactor to abstract os.Exit call")
+		errors.New("error generating profile"), errors.New("error generating profile"),
+		false)
+	assertThat("should error if no syscalls found and errorWhenEmpty is enabled", nil,
+		"",
+		nil, errors.New("no system calls found"),
+		true)
 }
 
 type syscallsSourceStub struct {

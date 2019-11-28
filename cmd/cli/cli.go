@@ -12,7 +12,7 @@ var (
 	zaz seccomp [command] [flags]
 `
 
-	errInvalidSyntax = errors.New("invalid syntax")
+	errInvalidSyntax error = errors.New("invalid syntax")
 )
 
 // Console represents a Console application.
@@ -43,7 +43,12 @@ func NewConsole(stdOut io.Writer, stdErr io.Writer, exit func(int)) *Console {
 func (c *Console) exitOnError(writer io.Writer, err error) {
 	printf(writer, "error: %s\n", err)
 
-	c.exit(1)
+	code := 1
+	if err == errNoSyscallsFound {
+		code = 2
+	}
+
+	c.exit(code)
 }
 
 // Run runs the console application.

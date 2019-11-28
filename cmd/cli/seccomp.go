@@ -12,8 +12,9 @@ import (
 	"github.com/pjbgf/zaz/pkg/seccomp"
 )
 
-const (
-	defaultSysLogPath string = "/var/log/syslog"
+var (
+	defaultSysLogPath  string = "/var/log/syslog"
+	errNoSyscallsFound error  = errors.New("no system calls found")
 )
 
 func newSeccompSubCommand(args []string) (cliCommand, error) {
@@ -184,8 +185,7 @@ func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, error
 		return err
 	}
 	if errorWhenEmpty && p == nil {
-		printf(output, "error: no system calls found\n")
-		os.Exit(2)
+		return errNoSyscallsFound
 	}
 
 	json, err := json.Marshal(p)
