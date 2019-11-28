@@ -12,6 +12,10 @@ import (
 	"github.com/pjbgf/zaz/pkg/seccomp"
 )
 
+const (
+	defaultSysLogPath string = "/var/log/syslog"
+)
+
 func newSeccompSubCommand(args []string) (cliCommand, error) {
 
 	if len(args) > 1 {
@@ -70,7 +74,7 @@ func parseFromLogFlags(args []string) (processID int, syslogPath string, errorWh
 			err = errors.New("invalid pid")
 		}
 
-		syslogPath = "/var/log/syslog"
+		syslogPath = defaultSysLogPath
 		for _, arg := range args[:len(args)-1] {
 			if ifFlag(arg, "log-file") {
 				syslogPath = getFlagValue(arg, "log-file")
