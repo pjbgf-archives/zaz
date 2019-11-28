@@ -63,11 +63,11 @@ go-clean:
 
 go-test:
 	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -run Short -race ./...
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -race ./...
 
 go-test-coverage:
 	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -run Short -race -coverprofile=coverage.txt -covermode=atomic ./... 
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -race -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
 verify: verify-gospec 
