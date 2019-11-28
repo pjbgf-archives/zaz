@@ -150,7 +150,7 @@ func newBruteForce(args []string) (*bruteForce, error) {
 
 	return &bruteForce{
 		processSeccompSource,
-		seccomp.NewBruteForceSource(),
+		seccomp.NewBruteForceSource(seccomp.NewDockerRunner()),
 		errorWhenEmpty}, nil
 }
 

@@ -402,3 +402,11 @@ func getSyscallName(syscallID int) (string, error) {
 
 	return syscallName, nil
 }
+
+func getAllSyscallNames() []string {
+	syscalls := make([]string, 0, len(systemCalls))
+	for _, n := range systemCalls {
+		syscalls = append(syscalls, n)
+	}
+	return syscalls
+}
