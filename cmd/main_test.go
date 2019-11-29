@@ -35,15 +35,15 @@ func TestMain_Integration(t *testing.T) {
 
 	assertThat("should return profile for go app simple-app",
 		[]string{"zaz", "seccomp", "from-go", "../test/simple-app"},
-		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["sched_yield","futex","write","mmap","exit_group","madvise","rt_sigprocmask","getpid","gettid","tgkill","rt_sigaction","read","getpgrp","arch_prctl"],"action":"SCMP_ACT_ALLOW"}]}`)
+		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","exit_group","futex","getpgrp","getpid","gettid","madvise","mmap","read","rt_sigaction","rt_sigprocmask","sched_yield","tgkill","write"],"action":"SCMP_ACT_ALLOW"}]}`)
 
 	assertThat("should return profile for sample log file",
 		[]string{"zaz", "seccomp", "from-log", "--log-file=\"../test/syslog\"", "21755"},
-		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["futex","openat","nanosleep","epoll_ctl","fstatfs","getdents64","fcntl"],"action":"SCMP_ACT_ALLOW"}]}`)
+		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["epoll_ctl","fcntl","fstatfs","futex","getdents64","nanosleep","openat"],"action":"SCMP_ACT_ALLOW"}]}`)
 
-	assertThat("should return profile for sample log file",
+	assertThat("should brute force echo hi",
 		[]string{"zaz", "seccomp", "brute-force", "docker", "alpine", "echo hi"},
-		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["openat","read","write","epoll_pwait","prctl","setgid","futex","execve","setgroups","chdir","mprotect","capset","newfstatat","setuid","getdents64","arch_prctl","getppid","close","fstat","stat","fstatfs","capget"],"action":"SCMP_ACT_ALLOW"}]}`)
+		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","close","execve","exit","exit_group","futex","mprotect","write"],"action":"SCMP_ACT_ALLOW"}]}`)
 }
 
 func TestMain_ErrorCodes(t *testing.T) {

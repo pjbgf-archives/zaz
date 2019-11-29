@@ -1,6 +1,10 @@
 package seccomp
 
-import specs "github.com/opencontainers/runtime-spec/specs-go"
+import (
+	"sort"
+
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+)
 
 // Seccomp represents the seccomp profile generation functionatily.
 type Seccomp struct {
@@ -36,6 +40,8 @@ func (s *Seccomp) GetProfile() (*specs.LinuxSeccomp, error) {
 			return nil, nil
 		}
 	}
+
+	sort.Strings(syscalls.Names)
 
 	arches := getArchitectures(s.targetArchitectures)
 	r := specs.LinuxSeccomp{DefaultAction: s.defaultAction,
