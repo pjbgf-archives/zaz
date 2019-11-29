@@ -1,6 +1,7 @@
 package seccomp
 
 import (
+	"errors"
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -12,13 +13,19 @@ type runnerStub struct {
 	callsToFail []string
 }
 
-func (r *runnerStub) Run(profile *specs.LinuxSeccomp) {
+func (r *runnerStub) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 	r.profile = profile
+
+	if r.shouldFail() {
+		return errors.New("could not load container")
+	}
+
+	return nil
 }
 
 // forces failures every time a system call on r.callsToFail is not
 // in the profile being currently executed.
-func (r *runnerStub) HasExecuted() bool {
+func (r *runnerStub) shouldFail() bool {
 	for _, a := range r.callsToFail {
 		contains := false
 		for _, n := range r.profile.Syscalls[0].Names {
@@ -28,11 +35,11 @@ func (r *runnerStub) HasExecuted() bool {
 		}
 
 		if !contains {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func TestBruteForce_GetSystemCalls(t *testing.T) {
@@ -44,15 +51,27 @@ func TestBruteForce_GetSystemCalls(t *testing.T) {
 
 		actual, err := s.GetSystemCalls()
 
-		should.BeEqual(expected, actual, assumption)
 		should.BeEqual(expectedErr, err, assumption)
+		should.BeEqual(expected.Action, actual.Action, assumption)
+		should.BeEqual(len(expected.Names), len(actual.Names), assumption)
+
+		for _, ne := range expected.Names {
+			found := false
+			for _, na := range expected.Names {
+				if ne == na {
+					found = true
+					break
+				}
+			}
+			should.BeTrue(found, assumption+" syscall: "+ne)
+		}
 	}
 
 	assertThat("should return all syscalls that the container can't run without",
 		[]string{"read", "write", "close"},
 		&specs.LinuxSyscall{
 			Action: specs.ActAllow,
-			Names:  []string{"read", "write", "close"},
+			Names:  []string{"read", "write", "close", "exit", "execve", "exit_group"},
 		},
 		nil)
 }

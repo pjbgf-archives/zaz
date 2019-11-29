@@ -147,27 +147,34 @@ type bruteForce struct {
 }
 
 func newBruteForce(args []string) (*bruteForce, error) {
-	// dockerImage, command, errorWhenEmpty, err := parseBruteForceFlags(args)
-	_, _, errorWhenEmpty, err := parseBruteForceFlags(args)
+	runnerType, image, command, err := parseBruteForceFlags(args)
 	if err != nil {
 		return nil, err
 	}
 
+	var runner seccomp.BruteForceRunner
+	if runnerType == "docker" {
+		runner = seccomp.NewDockerRunner(image, command)
+	} else {
+		return nil, errors.New("invalid runner type")
+	}
+
 	return &bruteForce{
 		processSeccompSource,
-		seccomp.NewBruteForceSource(seccomp.NewDockerRunner()),
-		errorWhenEmpty}, nil
+		seccomp.NewBruteForceSource(runner),
+		true}, nil
 }
 
-func parseBruteForceFlags(args []string) (dockerImage, command string, errorWhenEmpty bool, err error) {
-	if len(args) == 0 {
+func parseBruteForceFlags(args []string) (runnerType, image, command string, err error) {
+	if len(args) < 3 {
 		err = errInvalidSyntax
-	} else {
-		for _, arg := range args[:len(args)-1] {
-			if ifFlag(arg, "error-when-empty") {
-				errorWhenEmpty = true
-			}
-		}
+		return
+	}
+	runnerType = args[1]
+	image = args[2]
+
+	if len(args) > 3 {
+		command = args[3]
 	}
 
 	return

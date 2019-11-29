@@ -171,6 +171,38 @@ func TestProcessSeccompSource(t *testing.T) {
 		true)
 }
 
+func TestNewBruteForce(t *testing.T) {
+	assertThat := func(assumption string, args []string, expected *bruteForce, expectedErr error) {
+		should := should.New(t)
+
+		actual, err := newBruteForce(args)
+
+		should.BeEqual(expectedErr, err, assumption)
+		should.BeEqual(expected, actual, assumption)
+	}
+
+	assertThat("should error when less than two arguments",
+		[]string{},
+		nil, errors.New("invalid syntax"))
+}
+func TestParseBruteForceFlags(t *testing.T) {
+	assertThat := func(assumption string, args []string,
+		expectedType, expectedImg, expectedCmd string, expectedErr error) {
+		should := should.New(t)
+
+		runnerType, image, command, err := parseBruteForceFlags(args)
+
+		should.BeEqual(expectedErr, err, assumption)
+		should.BeEqual(expectedType, runnerType, assumption)
+		should.BeEqual(expectedImg, image, assumption)
+		should.BeEqual(expectedCmd, command, assumption)
+	}
+
+	assertThat("should error when image not defined",
+		[]string{"brute-force", "docker", "tusyfox", "walk"},
+		"docker", "tusyfox", "walk", nil)
+}
+
 type syscallsSourceStub struct {
 	syscalls []string
 	err      error
