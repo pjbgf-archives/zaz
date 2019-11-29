@@ -13,11 +13,11 @@ func TestDockerRunner_Integration(t *testing.T) {
 	assertThat := func(assumption, image, cmd string, profile *specs.LinuxSeccomp,
 		shouldErr bool) {
 		should := should.New(t)
-		s := NewDockerRunner(image, cmd)
+		s, _ := NewDockerRunner(image, cmd)
 
 		err := s.RunWithSeccomp(profile)
-
 		hasErrored := err != nil
+
 		should.BeEqual(shouldErr, hasErrored, assumption)
 		wg.Done()
 	}

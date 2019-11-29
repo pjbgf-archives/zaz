@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
-	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -13,25 +12,49 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// BruteForceSource represents a system calls source based on a brute force approach.
 type BruteForceSource struct {
 	options []string
 	runner  BruteForceRunner
 }
 
+// BruteForceRunner defines the interface for brute force runners.
 type BruteForceRunner interface {
 	RunWithSeccomp(profile *specs.LinuxSeccomp) error
 }
 
+// DockerRunner represents a runner for docker.
 type DockerRunner struct {
 	Image   string
 	Command string
 }
 
-func NewDockerRunner(img, cmd string) *DockerRunner {
+// NewDockerRunner initialises DockerRunner.
+func NewDockerRunner(img, cmd string) (*DockerRunner, error) {
+	err := ensureImageWasPulled(img)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DockerRunner{
 		Image:   img,
 		Command: cmd,
+	}, nil
+}
+
+func ensureImageWasPulled(image string) error {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
 	}
+
+	_, err = cli.ImagePull(ctx, image, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // RunWithSeccomp creates a container and runs the defined command.
@@ -42,18 +65,17 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 		return err
 	}
 
-	_, err = cli.ImagePull(ctx, r.Image, types.ImagePullOptions{})
-	if err != nil {
-		return err
-	}
-
 	hostCfg := container.HostConfig{
 		SecurityOpt: []string{"no-new-privileges"},
+		AutoRemove:  true,
 	}
 	cfg := container.Config{
 		Image: r.Image,
-		Cmd:   strings.Fields(r.Command),
-		Tty:   false,
+		Tty:   false, AttachStdout: false, AttachStderr: false,
+	}
+
+	if r.Command != "" {
+		cfg.Cmd = strings.Fields(r.Command)
 	}
 
 	if profile != nil {
@@ -91,8 +113,9 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 	return nil
 }
 
+// NewBruteForceSource initialises BruteForceSource.
 func NewBruteForceSource(runner BruteForceRunner) *BruteForceSource {
-	s := getAllSyscallNames()
+	s := getMostFrequentSyscalls()
 	return &BruteForceSource{
 		runner:  runner,
 		options: s,
@@ -123,35 +146,20 @@ func (s *BruteForceSource) canRunBlockingSyscall(syscall string) bool {
 	return err == nil
 }
 
+// GetSystemCalls returns all system calls found by brute forcing the profile using a runner.
 func (s *BruteForceSource) GetSystemCalls() (*specs.LinuxSyscall, error) {
-	var wg sync.WaitGroup
-	sChan := make(chan string)
-
-	validate := func(sc string) {
-		if !s.canRunBlockingSyscall(sc) {
-			sChan <- sc
+	mustHaves := make([]string, 0, 60)
+	process := func(scs []string) []string {
+		items := make([]string, 0, 60)
+		for _, syscall := range scs {
+			if !s.canRunBlockingSyscall(syscall) {
+				items = append(items, syscall)
+			}
 		}
-		wg.Done()
-	}
-	wg.Add(len(s.options))
-
-	for _, syscall := range s.options {
-		go validate(syscall)
+		return items
 	}
 
-	go func() {
-		wg.Wait()
-		close(sChan)
-	}()
-
-	mustHaves := make([]string, 0, 50)
-	for {
-		if sc, ok := <-sChan; ok {
-			mustHaves = append(mustHaves, sc)
-		} else {
-			break
-		}
-	}
+	mustHaves = append(mustHaves, process(s.options)...)
 
 	return &specs.LinuxSyscall{
 		Action: specs.ActAllow,

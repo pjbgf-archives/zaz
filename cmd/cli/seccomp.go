@@ -154,7 +154,10 @@ func newBruteForce(args []string) (*bruteForce, error) {
 
 	var runner seccomp.BruteForceRunner
 	if runnerType == "docker" {
-		runner = seccomp.NewDockerRunner(image, command)
+		runner, err = seccomp.NewDockerRunner(image, command)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		return nil, errors.New("invalid runner type")
 	}
