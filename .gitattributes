@@ -1,3 +1,4 @@
 *.go linguist-detectable=true
-should/*.go linguist-detectable=true
+cmd/*.go linguist-detectable=true
+pkg/*.go linguist-detectable=true
 .github/* linguist-detectable=false
