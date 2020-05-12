@@ -84,5 +84,8 @@ func getCommand(args []string) (cliCommand, error) {
 }
 
 func printf(writer io.Writer, format string, args ...interface{}) {
-	_, _ = writer.Write([]byte(fmt.Sprintf(format, args...)))
+	_, err := writer.Write([]byte(fmt.Sprintf(format, args...)))
+	if err != nil {
+		panic(err)
+	}
 }

@@ -65,7 +65,10 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 		}
 
 		if profile != nil {
-			content, _ := json.Marshal(profile)
+			content, err := json.Marshal(profile)
+			if err != nil {
+				panic(err)
+			}
 			hostCfg.SecurityOpt = append(hostCfg.SecurityOpt, "seccomp="+string(content))
 		}
 
