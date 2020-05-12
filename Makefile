@@ -70,13 +70,20 @@ go-test-coverage:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -race -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
-verify: verify-gospec 
+verify: verify-gosec 
 
-verify-gospec:
-	@echo "  >  Downloading $(GOSECNAME)"
-	@GOSECNAME=$(GOSECNAME) .github/tools/run-gosec.sh	
+verify-gosec: download-gosec
+verify-gosec:
+	@echo "  >  Run gosec"
+	@./build/tools/gosec/gosec -conf gosec.json ./...
 
 
 
 export-coverage:
 	@-$(MAKE) go-test-coverage && .github/tools/codecov.sh
+
+
+download-tools: download-gosec
+
+download-gosec:
+	@.github/tools/download-gosec.sh

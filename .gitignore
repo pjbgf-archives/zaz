@@ -1,5 +1,6 @@
 bin
 vendor
+build
 
 *.tar.gz
 coverage.txt
