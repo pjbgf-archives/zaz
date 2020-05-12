@@ -44,73 +44,60 @@ func NewDockerRunner(img, cmd string) (*DockerRunner, error) {
 
 func ensureImageWasPulled(image string) error {
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return err
+	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
+		if _, err = cli.ImagePull(ctx, image, types.ImagePullOptions{}); err == nil {
+			return nil
+		}
 	}
 
-	_, err = cli.ImagePull(ctx, image, types.ImagePullOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return errors.New("image could not be pulled")
 }
 
 // RunWithSeccomp creates a container and runs the defined command.
 func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return err
-	}
+	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
+		hostCfg := container.HostConfig{SecurityOpt: []string{"no-new-privileges"}, AutoRemove: true}
+		cfg := container.Config{Image: r.Image, Tty: false, AttachStdout: false, AttachStderr: false}
 
-	hostCfg := container.HostConfig{
-		SecurityOpt: []string{"no-new-privileges"},
-		AutoRemove:  true,
-	}
-	cfg := container.Config{
-		Image: r.Image,
-		Tty:   false, AttachStdout: false, AttachStderr: false,
-	}
+		if r.Command != "" {
+			cfg.Cmd = strings.Fields(r.Command)
+		}
 
-	if r.Command != "" {
-		cfg.Cmd = strings.Fields(r.Command)
-	}
+		if profile != nil {
+			content, _ := json.Marshal(profile)
+			hostCfg.SecurityOpt = append(hostCfg.SecurityOpt, "seccomp="+string(content))
+		}
 
-	if profile != nil {
-		content, _ := json.Marshal(profile)
-		hostCfg.SecurityOpt = append(hostCfg.SecurityOpt, "seccomp="+string(content))
-	}
-
-	resp, err := cli.ContainerCreate(ctx, &cfg, &hostCfg, nil, "")
-	if err != nil {
-		return err
-	}
-
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return err
-	}
-
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
+		resp, err := cli.ContainerCreate(ctx, &cfg, &hostCfg, nil, "")
 		if err != nil {
 			return err
 		}
-	case <-statusCh:
+
+		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+			return err
+		}
+
+		statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+		select {
+		case err := <-errCh:
+			if err != nil {
+				return err
+			}
+		case <-statusCh:
+		}
+
+		status, err := cli.ContainerInspect(ctx, resp.ID)
+		if err != nil {
+			return err
+		}
+
+		if !status.State.Running && status.State.ExitCode != 0 {
+			return errors.New("error running container")
+		}
 	}
 
-	status, err := cli.ContainerInspect(ctx, resp.ID)
-	if err != nil {
-		return err
-	}
-
-	if !status.State.Running && status.State.ExitCode != 0 {
-		return errors.New("errored on execution")
-	}
-
-	return nil
+	return errors.New("error running container")
 }
 
 // NewBruteForceSource initialises BruteForceSource.
