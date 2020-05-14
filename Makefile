@@ -1,5 +1,3 @@
-## Inspired on Makefile from https://kodfabrik.com/journal/a-good-makefile-for-go/
-
 BINARY_NAME := $(shell basename "$(PWD)")
 VERSION := $(shell git describe --tags --always)
 
@@ -8,30 +6,32 @@ GOPATH := $(GOBASE)/vendor:$(GOBASE)
 GOBIN := $(GOBASE)/bin
 GOFILES := $(wildcard cmd/*.go)
 
-GOSECNAME := "gosec_2.0.0_linux_amd64"
-
 LDFLAGS :=-ldflags "-w -X=github.com/pjbgf/zaz/cmd.gitcommit=$(VERSION) -extldflags -static"
 
 
 all: build
 
-build: 
-	@-$(MAKE) -s go-compile
+build: go-compile
 
 run: 
 	@-$(GOBIN)/$(BINARY_NAME)
 
+.PHONY: clean
 clean:
 	@-rm $(GOBIN)/$(BINARY_NAME) 2> /dev/null
 	@-$(MAKE) go-clean
 
+
+.PHONY: image
 image: 
 	@-$(MAKE) docker-build
 
+.PHONY: push
 push: 
 	@-$(MAKE) docker-push
 
 
+.PHONY: test
 test: go-test
 
 
@@ -70,6 +70,7 @@ go-test-coverage:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -race -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
+.PHONY: verify
 verify: verify-gosec 
 
 verify-gosec: download-gosec
@@ -83,6 +84,7 @@ export-coverage:
 	@-$(MAKE) go-test-coverage && .github/tools/codecov.sh
 
 
+.PHONY: download-tools
 download-tools: download-gosec
 
 download-gosec:
