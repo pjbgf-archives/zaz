@@ -185,6 +185,7 @@ func TestNewBruteForce(t *testing.T) {
 		[]string{},
 		nil, errors.New("invalid syntax"))
 }
+
 func TestParseBruteForceFlags(t *testing.T) {
 	assertThat := func(assumption string, args []string,
 		expectedType, expectedImg, expectedCmd string, expectedErr error) {

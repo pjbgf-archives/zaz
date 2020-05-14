@@ -77,10 +77,10 @@ func parseFromLogFlags(args []string) (processID int, syslogPath string, errorWh
 
 		syslogPath = defaultSysLogPath
 		for _, arg := range args[:len(args)-1] {
-			if ifFlag(arg, "log-file") {
+			if isFlag(arg, "log-file") {
 				syslogPath = getFlagValue(arg, "log-file")
 			}
-			if ifFlag(arg, "error-when-empty") {
+			if isFlag(arg, "error-when-empty") {
 				errorWhenEmpty = true
 			}
 		}
@@ -127,7 +127,7 @@ func parseFromGoFlags(args []string) (filePath string, errorWhenEmpty bool, err 
 	} else {
 		filePath = args[len(args)-1]
 		for _, arg := range args[:len(args)-1] {
-			if ifFlag(arg, "error-when-empty") {
+			if isFlag(arg, "error-when-empty") {
 				errorWhenEmpty = true
 			}
 		}
@@ -207,7 +207,7 @@ func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, error
 	return err
 }
 
-func ifFlag(arg, flagName string) bool {
+func isFlag(arg, flagName string) bool {
 	f := fmt.Sprintf("--%s", flagName)
 	return strings.HasPrefix(arg, f)
 }
