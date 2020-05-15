@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -54,7 +55,7 @@ func ensureImageWasPulled(image string) error {
 }
 
 // RunWithSeccomp creates a container and runs the defined command.
-func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
+func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 	ctx := context.Background()
 	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
 		hostCfg := container.HostConfig{SecurityOpt: []string{"no-new-privileges"}, AutoRemove: true}
@@ -92,15 +93,14 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 
 		status, err := cli.ContainerInspect(ctx, resp.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("error running container. err: %v", err)
 		}
-
-		if !status.State.Running && status.State.ExitCode != 0 {
-			return errors.New("error running container")
+		if status.State != nil && status.State.ExitCode > 1 {
+			return fmt.Errorf("error running container. exit code: %d", status.State.ExitCode)
 		}
 	}
 
-	return errors.New("error running container")
+	return nil
 }
 
 // NewBruteForceSource initialises BruteForceSource.
@@ -132,13 +132,17 @@ func (s *BruteForceSource) canRunBlockingSyscall(syscall string) bool {
 			specs.LinuxSyscall{Names: tmpSyscalls, Action: specs.ActAllow},
 		},
 	})
-
 	return err == nil
 }
 
 // GetSystemCalls returns all system calls found by brute forcing the profile using a runner.
 func (s *BruteForceSource) GetSystemCalls() (*specs.LinuxSyscall, error) {
 	mustHaves := make([]string, 0, 60)
+
+	if err := s.runner.RunWithSeccomp(nil); err != nil {
+		return nil, fmt.Errorf("execution aborted, command could not be executed: %v", err)
+	}
+
 	process := func(scs []string) []string {
 		items := make([]string, 0, 60)
 		for _, syscall := range scs {

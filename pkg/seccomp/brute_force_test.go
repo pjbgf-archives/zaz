@@ -26,16 +26,18 @@ func (r *runnerStub) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 // forces failures every time a system call on r.callsToFail is not
 // in the profile being currently executed.
 func (r *runnerStub) shouldFail() bool {
-	for _, a := range r.callsToFail {
-		contains := false
-		for _, n := range r.profile.Syscalls[0].Names {
-			if a == n {
-				contains = true
+	if r.profile != nil {
+		for _, a := range r.callsToFail {
+			contains := false
+			for _, n := range r.profile.Syscalls[0].Names {
+				if a == n {
+					contains = true
+				}
 			}
-		}
 
-		if !contains {
-			return true
+			if !contains {
+				return true
+			}
 		}
 	}
 
@@ -53,18 +55,7 @@ func TestBruteForce_GetSystemCalls(t *testing.T) {
 
 		should.BeEqual(expectedErr, err, assumption)
 		should.BeEqual(expected.Action, actual.Action, assumption)
-		should.BeEqual(len(expected.Names), len(actual.Names), assumption)
-
-		for _, ne := range expected.Names {
-			found := false
-			for _, na := range expected.Names {
-				if ne == na {
-					found = true
-					break
-				}
-			}
-			should.BeTrue(found, assumption+" syscall: "+ne)
-		}
+		should.HaveSameItems(expected.Names, actual.Names, assumption)
 	}
 
 	assertThat("should return all syscalls that the container can't run without",
