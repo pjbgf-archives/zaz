@@ -18,7 +18,13 @@ func TestGetSystemCalls_Integration(t *testing.T) {
 		actual, err := s.GetSystemCalls()
 
 		should.BeEqual(expectedErr, err, assumption)
-		should.BeEqual(expected, actual, assumption)
+		if expected == nil {
+			should.BeNil(actual, assumption)
+		} else {
+			should.BeEqual(expected.Action, actual.Action, assumption)
+			should.BeEqual(expected.Args, actual.Args, assumption)
+			should.HaveSameItems(expected.Names, actual.Names, assumption)
+		}
 	}
 
 	assertThat("should error for file not found", "../../test/invalid", nil,
@@ -41,6 +47,10 @@ func TestGetSystemCalls_Integration(t *testing.T) {
 				"read",
 				"getpgrp",
 				"arch_prctl",
+				"epoll_ctl",
+				"readlinkat",
+				"close",
+				"fcntl",
 			},
 		}, nil)
 }
