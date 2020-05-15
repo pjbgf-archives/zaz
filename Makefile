@@ -63,11 +63,11 @@ go-clean:
 
 go-test:
 	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -race ./...
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -race ./...
 
 go-test-coverage:
 	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -race -coverprofile=coverage.txt -covermode=atomic ./... 
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -race -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
 .PHONY: verify
