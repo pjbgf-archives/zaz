@@ -51,7 +51,7 @@ go-get:
 
 go-build:
 	@echo "  >  Building binary..."
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -a $(LDFLAGS) -o $(GOBIN)/$(BINARY_NAME) $(GOFILES)
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -mod=readonly -a $(LDFLAGS) -o $(GOBIN)/$(BINARY_NAME) $(GOFILES)
 
 go-generate:
 	@echo "  >  Generating dependency files..."
