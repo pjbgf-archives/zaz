@@ -35,7 +35,7 @@ func TestMain_Integration(t *testing.T) {
 
 	assertThat("should return profile for go app simple-app",
 		[]string{"zaz", "seccomp", "from-go", "../test/simple-app"},
-		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","exit_group","futex","getpgrp","getpid","gettid","madvise","mmap","read","rt_sigaction","rt_sigprocmask","sched_yield","tgkill","write"],"action":"SCMP_ACT_ALLOW"}]}`)
+		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","close","epoll_ctl","exit_group","fcntl","futex","getpgrp","getpid","gettid","madvise","mmap","read","readlinkat","rt_sigaction","rt_sigprocmask","sched_yield","tgkill","write"],"action":"SCMP_ACT_ALLOW"}]}`)
 
 	assertThat("should return profile for sample log file",
 		[]string{"zaz", "seccomp", "from-log", "--log-file=\"../test/syslog\"", "21755"},
