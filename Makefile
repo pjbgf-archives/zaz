@@ -34,6 +34,9 @@ push:
 .PHONY: test
 test: go-test
 
+.PHONY: test-all
+test-all: go-test-all
+
 
 docker-build: 
 	@echo "  >  Building image $(REGISTRY)/$(BINARY_NAME):$(VERSION)"
@@ -62,7 +65,11 @@ go-clean:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
 
 go-test:
-	@echo "  >  Running tests"
+	@echo "  >  Running short tests"
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -race ./...
+
+go-test-all:
+	@echo "  >  Running all tests"
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -race ./...
 
 go-test-coverage:

@@ -41,9 +41,13 @@ func TestMain_Integration(t *testing.T) {
 		[]string{"zaz", "seccomp", "from-log", "--log-file=\"../test/syslog\"", "21755"},
 		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["epoll_ctl","fcntl","fstatfs","futex","getdents64","nanosleep","openat"],"action":"SCMP_ACT_ALLOW"}]}`)
 
-	assertThat("should brute force echo hi",
-		[]string{"zaz", "seccomp", "brute-force", "docker", "alpine", "echo hi"},
-		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","close","execve","exit","exit_group","futex","mprotect","write"],"action":"SCMP_ACT_ALLOW"}]}`)
+	if !testing.Short() {
+		assertThat("should brute force echo hi",
+			[]string{"zaz", "seccomp", "brute-force", "docker", "alpine", "echo hi"},
+			`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","close","execve","exit","exit_group","futex","mprotect","write"],"action":"SCMP_ACT_ALLOW"}]}`)
+	} else {
+		t.Skip("skipping tests in short mode.")
+	}
 }
 
 func TestMain_ErrorCodes(t *testing.T) {
