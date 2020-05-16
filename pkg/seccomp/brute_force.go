@@ -129,7 +129,7 @@ func (s *BruteForceSource) canRunBlockingSyscall(syscall string) bool {
 	err := s.runner.RunWithSeccomp(&specs.LinuxSeccomp{
 		DefaultAction: specs.ActErrno,
 		Syscalls: []specs.LinuxSyscall{
-			specs.LinuxSyscall{Names: tmpSyscalls, Action: specs.ActAllow},
+			{Names: tmpSyscalls, Action: specs.ActAllow},
 		},
 	})
 	return err == nil
