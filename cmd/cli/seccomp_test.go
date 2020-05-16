@@ -26,7 +26,7 @@ func TestNewSeccompSubCommand(t *testing.T) {
 	}
 
 	assertThat("should return seccompFromGo command", "seccomp from-go ../../test/simple-app", &seccompFromGo{}, nil)
-	assertThat("should return seccompFromLog command", "seccomp from-log 123", &seccompFromLog{}, nil)
+	assertThat("should return seccompFromLog command", "seccomp from-log --log-file=../../test/syslog 123", &seccompFromLog{}, nil)
 	assertThat("should return error for invalid command", "seccomp blah", nil, errors.New("command not found"))
 }
 
