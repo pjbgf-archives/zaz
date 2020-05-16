@@ -98,7 +98,7 @@ func TestSeccompFromLogRun(t *testing.T) {
 		should.BeEqual(expected, actual, assumption)
 	}
 
-	assertThat("should get syscalls from syslog file", "12",
+	assertThat("should get syscalls from syslog file", "--log-file=\"../../test/syslog\" 12",
 		[]string{"abc", "exit"},
 		&specs.LinuxSyscall{Names: []string{"abc", "exit"}}, nil)
 }
