@@ -70,11 +70,11 @@ go-test:
 
 go-test-all:
 	@echo "  >  Running all tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -race ./...
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly ./...
 
 go-test-coverage:
 	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -race -coverprofile=coverage.txt -covermode=atomic ./... 
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
 .PHONY: verify
@@ -86,7 +86,7 @@ verify-gosec:
 	@./build/tools/gosec/gosec -conf gosec.json ./...
 
 
-
+.PHONY: export-coverage
 export-coverage:
 	@-$(MAKE) go-test-coverage && .github/tools/codecov.sh
 
