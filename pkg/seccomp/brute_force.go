@@ -95,12 +95,12 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 		if err != nil {
 			return fmt.Errorf("error running container. err: %v", err)
 		}
-		if status.State != nil && status.State.ExitCode > 1 {
+		if status.State != nil && status.State.ExitCode > 0 {
 			return fmt.Errorf("error running container. exit code: %d", status.State.ExitCode)
 		}
 	}
 
-	return nil
+	return err
 }
 
 // NewBruteForceSource initialises BruteForceSource.
