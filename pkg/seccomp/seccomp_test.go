@@ -58,6 +58,14 @@ func TestGetProfile(t *testing.T) {
 			Syscalls:      []specs.LinuxSyscall{{Names: []string{"abc", "def"}, Action: specs.ActAllow}},
 		},
 		nil, nil)
+
+	assertThat("should ensure syscalls are sorted", []string{"z", "d", "a", "b"}, true,
+		&specs.LinuxSeccomp{
+			DefaultAction: specs.ActErrno,
+			Architectures: []specs.Arch{specs.ArchX86_64, specs.ArchX86, specs.ArchX32},
+			Syscalls:      []specs.LinuxSyscall{{Names: []string{"a", "b", "d", "z"}, Action: specs.ActAllow}},
+		},
+		nil, nil)
 }
 
 func TestGetArchitectures(t *testing.T) {

@@ -26,7 +26,7 @@ func TestNewSeccompSubCommand(t *testing.T) {
 	}
 
 	assertThat("should return seccompFromGo command", "seccomp from-go ../../test/simple-app", &seccompFromGo{}, nil)
-	assertThat("should return seccompFromLog command", "seccomp from-log 123", &seccompFromLog{}, nil)
+	assertThat("should return seccompFromLog command", "seccomp from-log --log-file=../../test/syslog 123", &seccompFromLog{}, nil)
 	assertThat("should return error for invalid command", "seccomp blah", nil, errors.New("command not found"))
 }
 
@@ -57,7 +57,7 @@ func TestNewSeccompFromLog(t *testing.T) {
 		[]string{"--log-file=\"./a\"", "1"}, nil,
 		errors.New("error sanitising file name"))
 
-	// returns snapshotted working directory to ensure other tests' repeatability
+	// returns to previous working directory to ensure other tests' repeatability
 	os.Chdir(wdSnapshot)
 }
 
@@ -98,7 +98,7 @@ func TestSeccompFromLogRun(t *testing.T) {
 		should.BeEqual(expected, actual, assumption)
 	}
 
-	assertThat("should get syscalls from syslog file", "12",
+	assertThat("should get syscalls from syslog file", "--log-file=\"../../test/syslog\" 12",
 		[]string{"abc", "exit"},
 		&specs.LinuxSyscall{Names: []string{"abc", "exit"}}, nil)
 }
@@ -145,13 +145,13 @@ func TestSeccompFromGoRun(t *testing.T) {
 
 func TestProcessSeccompSource(t *testing.T) {
 	assertThat := func(assumption string, injectedCalls []string,
-		expected string, injectedErr, expectedErr error) {
+		expected string, injectedErr, expectedErr error, errWhenEmpty bool) {
 
 		var output bytes.Buffer
 		should := should.New(t)
 		source := newSyscallsSourceStub(injectedCalls, injectedErr)
 
-		err := processSeccompSource(&output, source, false)
+		err := processSeccompSource(&output, source, errWhenEmpty)
 
 		actual := output.String()
 		should.BeEqual(expectedErr, err, assumption)
@@ -160,14 +160,48 @@ func TestProcessSeccompSource(t *testing.T) {
 
 	assertThat("should print call into output", []string{"call1"},
 		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["call1"],"action":""}]}`,
-		nil, nil)
+		nil, nil, false)
 	assertThat("should stop if failed to get profile", nil,
 		"",
-		errors.New("error generating profile"), errors.New("error generating profile"))
+		errors.New("error generating profile"), errors.New("error generating profile"),
+		false)
+	assertThat("should error if no syscalls found and errorWhenEmpty is enabled", nil,
+		"",
+		nil, errors.New("no system calls found"),
+		true)
 }
 
-func TestExitCode2ForEmptyProfile(t *testing.T) {
-	t.Skip("need to refactor to abstract os.Exit call")
+func TestNewBruteForce(t *testing.T) {
+	assertThat := func(assumption string, args []string, expected *bruteForce, expectedErr error) {
+		should := should.New(t)
+
+		actual, err := newBruteForce(args)
+
+		should.BeEqual(expectedErr, err, assumption)
+		should.BeEqual(expected, actual, assumption)
+	}
+
+	assertThat("should error when less than two arguments",
+		[]string{},
+		nil, errors.New("invalid syntax"))
+}
+
+func TestParseBruteForceFlags(t *testing.T) {
+	assertThat := func(assumption string, args []string,
+		expectedType, expectedImg, expectedCmd string, expectedErr error) {
+		should := should.New(t)
+
+		runnerType, image, command, err := parseBruteForceFlags(args)
+
+		should.BeEqual(expectedErr, err, assumption)
+		should.BeEqual(expectedType, runnerType, assumption)
+		should.BeEqual(expectedImg, image, assumption)
+		should.BeEqual(expectedCmd, command, assumption)
+	}
+
+	assertThat("should error when image not defined",
+		[]string{"brute-force", "docker", "tusyfox", "walk"},
+		"docker", "tusyfox", "walk", nil)
 }
 
 type syscallsSourceStub struct {

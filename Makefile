@@ -1,49 +1,28 @@
-## Inspired on Makefile from https://kodfabrik.com/journal/a-good-makefile-for-go/
-
 BINARY_NAME := $(shell basename "$(PWD)")
 VERSION := $(shell git describe --tags --always)
 
 GOBASE := $(shell pwd)
 GOPATH := $(GOBASE)/vendor:$(GOBASE)
 GOBIN := $(GOBASE)/bin
-GOFILES := $(wildcard *.go)
-
-GOSECNAME := "gosec_2.0.0_linux_amd64"
+GOFILES := $(wildcard cmd/*.go)
 
 LDFLAGS :=-ldflags "-w -X=github.com/pjbgf/zaz/cmd.gitcommit=$(VERSION) -extldflags -static"
 
+.PHONY: all build clean test test-all verify export-coverage download-tools
 
 all: build
 
-build: 
-	@-$(MAKE) -s go-compile
 
 run: 
 	@-$(GOBIN)/$(BINARY_NAME)
+
 
 clean:
 	@-rm $(GOBIN)/$(BINARY_NAME) 2> /dev/null
 	@-$(MAKE) go-clean
 
-image: 
-	@-$(MAKE) docker-build
 
-push: 
-	@-$(MAKE) docker-push
-
-
-test: go-test
-
-
-docker-build: 
-	@echo "  >  Building image $(REGISTRY)/$(BINARY_NAME):$(VERSION)"
-	@docker build -t $(REGISTRY)/$(BINARY_NAME):$(VERSION) .
-
-docker-push: 
-	@echo "  >  Building image $(REGISTRY)/$(BINARY_NAME):$(VERSION)"
-	@docker build -t $(REGISTRY)/$(BINARY_NAME):$(VERSION) .
-
-go-compile: go-get go-build
+build: go-get go-build
 
 go-get:
 	@echo "  >  Checking if there is any missing dependencies..."
@@ -51,7 +30,7 @@ go-get:
 
 go-build:
 	@echo "  >  Building binary..."
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -a $(LDFLAGS) -o $(GOBIN)/$(BINARY_NAME) $(GOFILES)
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -mod=readonly -a $(LDFLAGS) -o $(GOBIN)/$(BINARY_NAME) $(GOFILES)
 
 go-generate:
 	@echo "  >  Generating dependency files..."
@@ -61,22 +40,35 @@ go-clean:
 	@echo "  >  Cleaning build cache"
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
 
+
+test: go-test
 go-test:
-	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -run Short -race ./...
+	@echo "  >  Running short tests"
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -race ./...
+
+test-all: go-test-all
+go-test-all:
+	@echo "  >  Running all tests"
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly ./...
 
 go-test-coverage:
 	@echo "  >  Running tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -run Short -race -coverprofile=coverage.txt -covermode=atomic ./... 
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
-verify: verify-gospec 
+verify: verify-gosec 
 
-verify-gospec:
-	@echo "  >  Downloading $(GOSECNAME)"
-	@GOSECNAME=$(GOSECNAME) .github/tools/run-gosec.sh	
-
+verify-gosec: download-gosec
+verify-gosec:
+	@echo "  >  Run gosec"
+	@./build/tools/gosec/gosec -conf gosec.json ./...
 
 
 export-coverage:
 	@-$(MAKE) go-test-coverage && .github/tools/codecov.sh
+
+
+download-tools: download-gosec
+
+download-gosec:
+	@.github/tools/download-gosec.sh

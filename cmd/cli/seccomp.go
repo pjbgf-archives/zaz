@@ -12,6 +12,11 @@ import (
 	"github.com/pjbgf/zaz/pkg/seccomp"
 )
 
+var (
+	defaultSysLogPath  string = "/var/log/syslog"
+	errNoSyscallsFound error  = errors.New("no system calls found")
+)
+
 func newSeccompSubCommand(args []string) (cliCommand, error) {
 
 	if len(args) > 1 {
@@ -20,6 +25,8 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 			return newSeccompFromGo(args[1:])
 		case "from-log":
 			return newSeccompFromLog(args[1:])
+		case "brute-force":
+			return newBruteForce(args[1:])
 		}
 	}
 
@@ -68,12 +75,12 @@ func parseFromLogFlags(args []string) (processID int, syslogPath string, errorWh
 			err = errors.New("invalid pid")
 		}
 
-		syslogPath = "/var/log/syslog"
+		syslogPath = defaultSysLogPath
 		for _, arg := range args[:len(args)-1] {
-			if ifFlag(arg, "log-file") {
+			if isFlag(arg, "log-file") {
 				syslogPath = getFlagValue(arg, "log-file")
 			}
-			if ifFlag(arg, "error-when-empty") {
+			if isFlag(arg, "error-when-empty") {
 				errorWhenEmpty = true
 			}
 		}
@@ -120,7 +127,7 @@ func parseFromGoFlags(args []string) (filePath string, errorWhenEmpty bool, err 
 	} else {
 		filePath = args[len(args)-1]
 		for _, arg := range args[:len(args)-1] {
-			if ifFlag(arg, "error-when-empty") {
+			if isFlag(arg, "error-when-empty") {
 				errorWhenEmpty = true
 			}
 		}
@@ -133,6 +140,53 @@ func (s *seccompFromGo) run(output io.Writer) error {
 	return s.processSource(output, s.source, s.errorWhenEmpty)
 }
 
+type bruteForce struct {
+	processSource  func(io.Writer, seccomp.SyscallsSource, bool) error
+	source         seccomp.SyscallsSource
+	errorWhenEmpty bool
+}
+
+func newBruteForce(args []string) (*bruteForce, error) {
+	runnerType, image, command, err := parseBruteForceFlags(args)
+	if err != nil {
+		return nil, err
+	}
+
+	var runner seccomp.BruteForceRunner
+	if runnerType == "docker" {
+		runner, err = seccomp.NewDockerRunner(image, command)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("invalid runner type")
+	}
+
+	return &bruteForce{
+		processSeccompSource,
+		seccomp.NewBruteForceSource(runner),
+		true}, nil
+}
+
+func parseBruteForceFlags(args []string) (runnerType, image, command string, err error) {
+	if len(args) < 3 {
+		err = errInvalidSyntax
+		return
+	}
+	runnerType = args[1]
+	image = args[2]
+
+	if len(args) > 3 {
+		command = args[3]
+	}
+
+	return
+}
+
+func (s *bruteForce) run(output io.Writer) error {
+	return s.processSource(output, s.source, s.errorWhenEmpty)
+}
+
 func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, errorWhenEmpty bool) error {
 	scmp := seccomp.NewSeccomp(source)
 	scmp.NilProfileForNoCalls = errorWhenEmpty
@@ -141,8 +195,7 @@ func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, error
 		return err
 	}
 	if errorWhenEmpty && p == nil {
-		printf(output, "error: no system calls found\n")
-		os.Exit(2)
+		return errNoSyscallsFound
 	}
 
 	json, err := json.Marshal(p)
@@ -154,7 +207,7 @@ func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, error
 	return err
 }
 
-func ifFlag(arg, flagName string) bool {
+func isFlag(arg, flagName string) bool {
 	f := fmt.Sprintf("--%s", flagName)
 	return strings.HasPrefix(arg, f)
 }
