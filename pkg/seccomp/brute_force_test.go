@@ -9,11 +9,14 @@ import (
 )
 
 type runnerStub struct {
-	profile     *specs.LinuxSeccomp
-	callsToFail []string
+	profile         *specs.LinuxSeccomp
+	callsToFail     []string
+	totalExecutions int
+	failAlways      bool
 }
 
 func (r *runnerStub) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
+	r.totalExecutions++
 	r.profile = profile
 
 	if r.shouldFail() {
@@ -26,6 +29,10 @@ func (r *runnerStub) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
 // forces failures every time a system call on r.callsToFail is not
 // in the profile being currently executed.
 func (r *runnerStub) shouldFail() bool {
+	if r.failAlways {
+		return true
+	}
+
 	if r.profile != nil {
 		for _, a := range r.callsToFail {
 			contains := false
@@ -42,6 +49,23 @@ func (r *runnerStub) shouldFail() bool {
 	}
 
 	return false
+}
+
+func TestBruteForce_ShortCirtuit(t *testing.T) {
+	assertThat := func(assumption string, expectedExecutions int, expectedErr error) {
+		should := should.New(t)
+		stub := &runnerStub{failAlways: true}
+		s := NewBruteForceSource(stub)
+
+		actual, err := s.GetSystemCalls()
+
+		should.BeNil(actual, assumption)
+		should.BeEqual(expectedExecutions, stub.totalExecutions, assumption)
+		should.BeEqual(expectedErr, err, assumption)
+	}
+
+	assertThat("should abort if fails without seccomp", 1,
+		errors.New("execution aborted, command could not be executed: could not load container"))
 }
 
 func TestBruteForce_GetSystemCalls(t *testing.T) {
