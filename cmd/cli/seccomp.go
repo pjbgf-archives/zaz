@@ -21,12 +21,15 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 
 	if len(args) > 1 {
 		switch args[1] {
-		case "from-go":
-			return newSeccompFromGo(args[1:])
-		case "from-log":
-			return newSeccompFromLog(args[1:])
-		case "brute-force":
+		case "docker":
 			return newBruteForce(args[1:])
+		default:
+			lastArg := args[len(args)-1:]
+			if _, err := strconv.Atoi(lastArg[0]); err == nil {
+				return newSeccompFromLog(args[1:])
+			} else if _, err := os.Stat(lastArg[0]); err == nil {
+				return newSeccompFromGo(args[1:])
+			}
 		}
 	}
 
@@ -147,19 +150,15 @@ type bruteForce struct {
 }
 
 func newBruteForce(args []string) (*bruteForce, error) {
-	runnerType, image, command, err := parseBruteForceFlags(args)
+	image, command, err := parseBruteForceFlags(args)
 	if err != nil {
-		return nil, err
+		return &bruteForce{}, err
 	}
 
 	var runner seccomp.BruteForceRunner
-	if runnerType == "docker" {
-		runner, err = seccomp.NewDockerRunner(image, command)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("invalid runner type")
+	runner, err = seccomp.NewDockerRunner(image, command)
+	if err != nil {
+		return nil, err
 	}
 
 	return &bruteForce{
@@ -168,16 +167,15 @@ func newBruteForce(args []string) (*bruteForce, error) {
 		true}, nil
 }
 
-func parseBruteForceFlags(args []string) (runnerType, image, command string, err error) {
-	if len(args) < 3 {
+func parseBruteForceFlags(args []string) (image, command string, err error) {
+	if len(args) < 2 {
 		err = errInvalidSyntax
 		return
 	}
-	runnerType = args[1]
-	image = args[2]
+	image = args[1]
 
-	if len(args) > 3 {
-		command = args[3]
+	if len(args) > 2 {
+		command = args[2]
 	}
 
 	return

@@ -34,16 +34,16 @@ func TestMain_Integration(t *testing.T) {
 	}
 
 	assertThat("should return profile for go app simple-app",
-		[]string{"zaz", "seccomp", "from-go", "../test/simple-app"},
+		[]string{"zaz", "seccomp", "../test/simple-app"},
 		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","close","epoll_ctl","exit_group","fcntl","futex","getpgrp","getpid","gettid","madvise","mmap","read","readlinkat","rt_sigaction","rt_sigprocmask","sched_yield","tgkill","write"],"action":"SCMP_ACT_ALLOW"}]}`)
 
 	assertThat("should return profile for sample log file",
-		[]string{"zaz", "seccomp", "from-log", "--log-file=\"../test/syslog\"", "21755"},
+		[]string{"zaz", "seccomp", "--log-file=\"../test/syslog\"", "21755"},
 		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["epoll_ctl","fcntl","fstatfs","futex","getdents64","nanosleep","openat"],"action":"SCMP_ACT_ALLOW"}]}`)
 
 	if !testing.Short() {
 		assertThat("should brute force echo hi",
-			[]string{"zaz", "seccomp", "brute-force", "docker", "alpine", "echo hi"},
+			[]string{"zaz", "seccomp", "docker", "alpine", "echo hi"},
 			`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["arch_prctl","close","execve","exit","exit_group","futex","mprotect","write"],"action":"SCMP_ACT_ALLOW"}]}`)
 	} else {
 		t.Skip("skipping tests in short mode.")
@@ -76,7 +76,7 @@ func TestMain_ErrorCodes(t *testing.T) {
 	assertThat("should exit with code 1 if no args provided", "zaz",
 		"exit status 1", "Usage:\n\tzaz seccomp [command] [flags]\nerror: invalid syntax\n")
 	assertThat("should support return error code when empty profile",
-		"zaz seccomp from-log --error-when-empty --log-file=\"../test/syslog\" 1",
+		"zaz seccomp --error-when-empty --log-file=\"../test/syslog\" 1",
 		"exit status 2", "error: no system calls found\n")
 }
 

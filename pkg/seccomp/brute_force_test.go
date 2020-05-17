@@ -86,7 +86,7 @@ func TestBruteForce_GetSystemCalls(t *testing.T) {
 		[]string{"read", "write", "close"},
 		&specs.LinuxSyscall{
 			Action: specs.ActAllow,
-			Names:  []string{"read", "write", "close", "exit", "execve", "exit_group"},
+			Names:  []string{"read", "write", "close", "futex", "exit", "execve", "exit_group"},
 		},
 		nil)
 }
