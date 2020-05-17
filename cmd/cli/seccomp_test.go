@@ -57,7 +57,7 @@ func TestNewSeccompFromLog(t *testing.T) {
 		[]string{"--log-file=\"./a\"", "1"}, nil,
 		errors.New("error sanitising file name"))
 
-	// returns snapshotted working directory to ensure other tests' repeatability
+	// returns to previous working directory to ensure other tests' repeatability
 	os.Chdir(wdSnapshot)
 }
 
