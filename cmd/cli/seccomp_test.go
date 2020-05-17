@@ -181,9 +181,12 @@ func TestNewBruteForce(t *testing.T) {
 		should.BeEqual(expected, actual, assumption)
 	}
 
-	assertThat("should error when less than two arguments",
+	assertThat("should error when receives zero arguments",
 		[]string{},
-		nil, errors.New("invalid syntax"))
+		&bruteForce{}, errors.New("invalid syntax"))
+	assertThat("should error when receives one argument",
+		[]string{"docker"},
+		&bruteForce{}, errors.New("invalid syntax"))
 }
 
 func TestParseBruteForceFlags(t *testing.T) {
@@ -191,16 +194,15 @@ func TestParseBruteForceFlags(t *testing.T) {
 		expectedType, expectedImg, expectedCmd string, expectedErr error) {
 		should := should.New(t)
 
-		runnerType, image, command, err := parseBruteForceFlags(args)
+		image, command, err := parseBruteForceFlags(args)
 
 		should.BeEqual(expectedErr, err, assumption)
-		should.BeEqual(expectedType, runnerType, assumption)
 		should.BeEqual(expectedImg, image, assumption)
 		should.BeEqual(expectedCmd, command, assumption)
 	}
 
 	assertThat("should error when image not defined",
-		[]string{"brute-force", "docker", "tusyfox", "walk"},
+		[]string{"docker", "tusyfox", "walk"},
 		"docker", "tusyfox", "walk", nil)
 }
 
