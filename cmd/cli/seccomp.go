@@ -22,7 +22,9 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 	if len(args) > 1 {
 		switch args[1] {
 		case "docker":
-			return newBruteForce(args[1:])
+			return newSeccompBruteForce(args[1:])
+		case "verify":
+			return newSeccompVerify(args[1:])
 		default:
 			lastArg := args[len(args)-1:]
 			if _, err := strconv.Atoi(lastArg[0]); err == nil {
@@ -40,6 +42,58 @@ type seccompFromLog struct {
 	processSource  func(io.Writer, seccomp.SyscallsSource, bool) error
 	source         seccomp.SyscallsSource
 	errorWhenEmpty bool
+}
+
+// newSeccompVerify creates a new seccompVerify command.
+func newSeccompVerify(args []string) (*seccompVerify, error) {
+	profilePath, err := parseVerifyFlags(args)
+	if err != nil {
+		return nil, err
+	}
+
+	filePath, err := sanitiseFileName(profilePath)
+	if err != nil {
+		return nil, errors.New("error sanitising file name")
+	}
+
+	/* #nosec file path has been sanitised */
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("profile file '%s' not found", filePath)
+	}
+
+	return &seccompVerify{
+		file,
+	}, nil
+}
+
+func parseVerifyFlags(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", errInvalidSyntax
+	}
+	return args[len(args)-1], nil
+}
+
+type seccompVerify struct {
+	file *os.File
+}
+
+func (s *seccompVerify) run(output io.Writer) error {
+	verifier := seccomp.NewProfileVerifier()
+	warnings, err := verifier.Run()
+	if err != nil {
+		return err
+	}
+	if len(warnings) > 0 {
+		output.Write([]byte("[!] Verification failed!\n\nHigh risk syscalls being allowed:\n"))
+		for _, warn := range warnings {
+			_, err = output.Write([]byte(fmt.Sprintln(warn.SyscallName)))
+		}
+	} else {
+		output.Write([]byte("[*] No high-risk syscalls found"))
+	}
+
+	return nil
 }
 
 // newSeccompFromLog creates a new seccompFromLog command.
@@ -149,7 +203,7 @@ type bruteForce struct {
 	errorWhenEmpty bool
 }
 
-func newBruteForce(args []string) (*bruteForce, error) {
+func newSeccompBruteForce(args []string) (*bruteForce, error) {
 	image, command, err := parseBruteForceFlags(args)
 	if err != nil {
 		return &bruteForce{}, err

@@ -175,7 +175,7 @@ func TestNewBruteForce(t *testing.T) {
 	assertThat := func(assumption string, args []string, expected *bruteForce, expectedErr error) {
 		should := should.New(t)
 
-		actual, err := newBruteForce(args)
+		actual, err := newSeccompBruteForce(args)
 
 		should.BeEqual(expectedErr, err, assumption)
 		should.BeEqual(expected, actual, assumption)

@@ -41,6 +41,10 @@ func TestMain_Integration(t *testing.T) {
 		[]string{"zaz", "seccomp", "--log-file=\"../test/syslog\"", "21755"},
 		`{"defaultAction":"SCMP_ACT_ERRNO","architectures":["SCMP_ARCH_X86_64","SCMP_ARCH_X86","SCMP_ARCH_X32"],"syscalls":[{"names":["epoll_ctl","fcntl","fstatfs","futex","getdents64","nanosleep","openat"],"action":"SCMP_ACT_ALLOW"}]}`)
 
+	assertThat("should return list of high-risk calls from profile",
+		[]string{"zaz", "seccomp", "verify", "../test/no-highrisk-profile.json"},
+		`[*] No high-risk syscalls found`)
+
 	if !testing.Short() {
 		assertThat("should brute force echo hi",
 			[]string{"zaz", "seccomp", "docker", "alpine", "echo hi"},
