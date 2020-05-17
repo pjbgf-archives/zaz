@@ -8,45 +8,21 @@ GOFILES := $(wildcard cmd/*.go)
 
 LDFLAGS :=-ldflags "-w -X=github.com/pjbgf/zaz/cmd.gitcommit=$(VERSION) -extldflags -static"
 
+.PHONY: all build clean test test-all verify export-coverage download-tools
 
 all: build
 
-build: go-compile
 
 run: 
 	@-$(GOBIN)/$(BINARY_NAME)
 
-.PHONY: clean
+
 clean:
 	@-rm $(GOBIN)/$(BINARY_NAME) 2> /dev/null
 	@-$(MAKE) go-clean
 
 
-.PHONY: image
-image: 
-	@-$(MAKE) docker-build
-
-.PHONY: push
-push: 
-	@-$(MAKE) docker-push
-
-
-.PHONY: test
-test: go-test
-
-.PHONY: test-all
-test-all: go-test-all
-
-
-docker-build: 
-	@echo "  >  Building image $(REGISTRY)/$(BINARY_NAME):$(VERSION)"
-	@docker build -t $(REGISTRY)/$(BINARY_NAME):$(VERSION) .
-
-docker-push: 
-	@echo "  >  Building image $(REGISTRY)/$(BINARY_NAME):$(VERSION)"
-	@docker build -t $(REGISTRY)/$(BINARY_NAME):$(VERSION) .
-
-go-compile: go-get go-build
+build: go-get go-build
 
 go-get:
 	@echo "  >  Checking if there is any missing dependencies..."
@@ -64,10 +40,13 @@ go-clean:
 	@echo "  >  Cleaning build cache"
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go clean
 
+
+test: go-test
 go-test:
 	@echo "  >  Running short tests"
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -race ./...
 
+test-all: go-test-all
 go-test-all:
 	@echo "  >  Running all tests"
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly ./...
@@ -77,7 +56,6 @@ go-test-coverage:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -coverprofile=coverage.txt -covermode=atomic ./... 
 
 
-.PHONY: verify
 verify: verify-gosec 
 
 verify-gosec: download-gosec
@@ -86,12 +64,10 @@ verify-gosec:
 	@./build/tools/gosec/gosec -conf gosec.json ./...
 
 
-.PHONY: export-coverage
 export-coverage:
 	@-$(MAKE) go-test-coverage && .github/tools/codecov.sh
 
 
-.PHONY: download-tools
 download-tools: download-gosec
 
 download-gosec:
