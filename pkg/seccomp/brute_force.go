@@ -123,7 +123,7 @@ func NewBruteForceSource(runner BruteForceRunner) *BruteForceSource {
 
 func isEssentialCall(syscall string) bool {
 	switch syscall {
-	case "close", "exit", "execve", "exit_group":
+	case "close", "exit", "execve", "exit_group", "futex":
 		return true
 	}
 	return false
