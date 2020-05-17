@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -88,7 +89,13 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 			if err != nil {
 				return err
 			}
-		case <-statusCh:
+		case sts := <-statusCh:
+			if sts.StatusCode > 0 {
+				return fmt.Errorf("error on status channel")
+			}
+		case <-time.After(1 * time.Minute):
+			cli.ContainerStop(ctx, resp.ID, nil)
+			return fmt.Errorf("container execution timed out")
 		}
 
 		status, err := cli.ContainerInspect(ctx, resp.ID)
