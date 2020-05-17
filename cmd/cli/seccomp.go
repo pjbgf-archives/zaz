@@ -21,12 +21,15 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 
 	if len(args) > 1 {
 		switch args[1] {
-		case "from-go":
-			return newSeccompFromGo(args[1:])
-		case "from-log":
-			return newSeccompFromLog(args[1:])
 		case "docker":
 			return newBruteForce(args[1:])
+		default:
+			lastArg := args[len(args)-1:]
+			if _, err := strconv.Atoi(lastArg[0]); err == nil {
+				return newSeccompFromLog(args[1:])
+			} else if _, err := os.Stat(lastArg[0]); err == nil {
+				return newSeccompFromGo(args[1:])
+			}
 		}
 	}
 
