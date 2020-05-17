@@ -417,6 +417,26 @@ func getAllSyscallNames() []string {
 
 func getMostFrequentSyscalls() []string {
 	return []string{
+		"arch_prctl",
+		"bind",
+		"clock_gettime", "close", "connect",
+		"dup2",
+		"execve", "exit", "exit_group", "epoll_pwait",
+		"fcntl", "futex",
+		"getpid", "getsockname", "getuid",
+		"ioctl",
+		"mprotect",
+		"nanosleep",
+		"open",
+		"poll",
+		"read", "recvfrom", "rt_sigaction", "rt_sigreturn", "rt_sigprocmask",
+		"sendto", "setitimer", "socket", "set_tid_address", "setsockopt",
+		"write", "writev",
+	}
+}
+
+func getMostSyscalls() []string {
+	return []string{
 		"accept",
 		"accept4",
 		"access",

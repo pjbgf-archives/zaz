@@ -14,6 +14,8 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+var executionTimeout time.Duration = 1 * time.Minute
+
 // BruteForceSource represents a system calls source based on a brute force approach.
 type BruteForceSource struct {
 	options []string
@@ -93,8 +95,8 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 			if sts.StatusCode > 0 {
 				return fmt.Errorf("error on status channel")
 			}
-		case <-time.After(1 * time.Minute):
-			cli.ContainerStop(ctx, resp.ID, nil)
+		case <-time.After(executionTimeout):
+			go cli.ContainerStop(ctx, resp.ID, nil)
 			return fmt.Errorf("container execution timed out")
 		}
 
