@@ -85,12 +85,15 @@ func (s *seccompVerify) run(output io.Writer) error {
 		return err
 	}
 	if len(warnings) > 0 {
-		output.Write([]byte("[!] Verification failed!\n\nHigh risk syscalls being allowed:\n"))
+		/* #nosec */
+		_, _ = output.Write([]byte("[!] Verification failed!\n\nHigh risk syscalls being allowed:\n"))
 		for _, warn := range warnings {
-			_, err = output.Write([]byte(fmt.Sprintln(warn.SyscallName)))
+			/* #nosec */
+			_, _ = output.Write([]byte(fmt.Sprintln(warn.SyscallName)))
 		}
 	} else {
-		output.Write([]byte("[*] No high-risk syscalls found"))
+		/* #nosec */
+		_, _ = output.Write([]byte("[*] No high-risk syscalls found"))
 	}
 
 	return nil
