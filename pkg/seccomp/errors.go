@@ -3,6 +3,7 @@ package seccomp
 // Error defines an error type that can be used as constant.
 type Error string
 
+// Error returns the error message.
 func (e Error) Error() string { return string(e) }
 
 // ErrInvalidProfile is returned when an invalid seccomp profile is provided.
