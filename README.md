@@ -60,6 +60,7 @@ Validates a seccomp profile, returning a list of high-risk system calls being al
 zaz seccomp verify no-highrisk-profile.json
 ```
 
+
 ## License
 
 Licensed under the MIT License. You may obtain a copy of the License [here](LICENSE).
