@@ -75,11 +75,11 @@ func parseVerifyFlags(args []string) (string, error) {
 }
 
 type seccompVerify struct {
-	file *os.File
+	profileReader io.Reader
 }
 
 func (s *seccompVerify) run(output io.Writer) error {
-	verifier := seccomp.NewProfileVerifier()
+	verifier := seccomp.NewProfileVerifier(s.profileReader)
 	warnings, err := verifier.Run()
 	if err != nil {
 		return err
