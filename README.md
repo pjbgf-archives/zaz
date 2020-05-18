@@ -20,7 +20,7 @@ Generate seccomp profiles based on executing a command on a docker image.
 This command "brute forces" the profile generation by trying to remove all possible 
 syscalls, then consolidating all syscalls the command cannot be executed without.
 
-```
+```sh
 zaz seccomp docker IMAGE COMMAND 
 
 # Calculates seccomp profile for a ping command inside an alpine image:
@@ -34,7 +34,7 @@ Generates seccomp profiles from the executable of an application.
 Note that on top of the application needs, some container images may add additional syscalls.
 
 
-```
+```sh
 zaz seccomp BINARY_PATH
 
 # Calculates seccomp profile from an application binary
@@ -46,13 +46,19 @@ zaz seccomp bin/webapi
 
 Generates seccomp profiles by assessing the kernels logs for a given process ID
 
-```
+```sh
 # Setting the syslog path (default is "/var/log/kern.log"):
 To get a profile based on process id 4325:
 
-zaz seccomp --log-file=/var/log/syslog 423
+zaz seccomp --log-file=/var/log/syslog 4325
 ```
 
+### zaz seccomp verify path/profile.json
+
+Validates a seccomp profile, returning a list of high-risk system calls being allowed.
+```sh
+zaz seccomp verify no-highrisk-profile.json
+```
 
 ## License
 
