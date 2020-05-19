@@ -1,20 +1,10 @@
 package seccomp
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"strings"
-	"time"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
-
-var executionTimeout time.Duration = 1 * time.Minute
 
 // BruteForceSource represents a system calls source based on a brute force approach.
 type BruteForceSource struct {
@@ -25,91 +15,6 @@ type BruteForceSource struct {
 // BruteForceRunner defines the interface for brute force runners.
 type BruteForceRunner interface {
 	RunWithSeccomp(profile *specs.LinuxSeccomp) error
-}
-
-// DockerRunner represents a runner for docker.
-type DockerRunner struct {
-	Image   string
-	Command string
-}
-
-// NewDockerRunner initialises DockerRunner.
-func NewDockerRunner(img, cmd string) (*DockerRunner, error) {
-	err := ensureImageWasPulled(img)
-	if err != nil {
-		return nil, err
-	}
-
-	return &DockerRunner{
-		Image:   img,
-		Command: cmd,
-	}, nil
-}
-
-func ensureImageWasPulled(image string) error {
-	ctx := context.Background()
-	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
-		if _, err = cli.ImagePull(ctx, image, types.ImagePullOptions{}); err == nil {
-			return nil
-		}
-	}
-
-	return errors.New("image could not be pulled")
-}
-
-// RunWithSeccomp creates a container and runs the defined command.
-func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
-	ctx := context.Background()
-	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
-		hostCfg := container.HostConfig{SecurityOpt: []string{"no-new-privileges"}, AutoRemove: true}
-		cfg := container.Config{Image: r.Image, Tty: false, AttachStdout: false, AttachStderr: false}
-
-		if r.Command != "" {
-			cfg.Cmd = strings.Fields(r.Command)
-		}
-
-		if profile != nil {
-			content, err := json.Marshal(profile)
-			if err != nil {
-				panic(err)
-			}
-			hostCfg.SecurityOpt = append(hostCfg.SecurityOpt, "seccomp="+string(content))
-		}
-
-		resp, err := cli.ContainerCreate(ctx, &cfg, &hostCfg, nil, "")
-		if err != nil {
-			return err
-		}
-
-		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			return err
-		}
-
-		statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-		select {
-		case err := <-errCh:
-			if err != nil {
-				return err
-			}
-		case sts := <-statusCh:
-			if sts.StatusCode > 0 {
-				return fmt.Errorf("error on status channel")
-			}
-		case <-time.After(executionTimeout):
-			go cli.ContainerStop(ctx, resp.ID, nil)
-			return fmt.Errorf("container execution timed out")
-		}
-
-		status, err := cli.ContainerInspect(ctx, resp.ID)
-		if err != nil {
-			return fmt.Errorf("error running container. err: %v", err)
-		}
-		if status.State != nil && status.State.ExitCode > 0 {
-			return fmt.Errorf("error running container. exit code: %d", status.State.ExitCode)
-		}
-	}
-
-	return err
 }
 
 // NewBruteForceSource initialises BruteForceSource.

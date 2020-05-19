@@ -8,50 +8,7 @@ import (
 	"github.com/pjbgf/go-test/should"
 )
 
-type runnerStub struct {
-	profile         *specs.LinuxSeccomp
-	callsToFail     []string
-	totalExecutions int
-	failAlways      bool
-}
-
-func (r *runnerStub) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
-	r.totalExecutions++
-	r.profile = profile
-
-	if r.shouldFail() {
-		return errors.New("could not load container")
-	}
-
-	return nil
-}
-
-// forces failures every time a system call on r.callsToFail is not
-// in the profile being currently executed.
-func (r *runnerStub) shouldFail() bool {
-	if r.failAlways {
-		return true
-	}
-
-	if r.profile != nil {
-		for _, a := range r.callsToFail {
-			contains := false
-			for _, n := range r.profile.Syscalls[0].Names {
-				if a == n {
-					contains = true
-				}
-			}
-
-			if !contains {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func TestBruteForce_ShortCirtuit(t *testing.T) {
+func TestBruteForce_ShortCircuit(t *testing.T) {
 	assertThat := func(assumption string, expectedExecutions int, expectedErr error) {
 		should := should.New(t)
 		stub := &runnerStub{failAlways: true}
@@ -151,4 +108,48 @@ func TestBruteForce_ExcludeItemFromSlice(t *testing.T) {
 		[]string{"item1", "item2", "item3", "item2", "item4", "item2"},
 		"item2",
 		[]string{"item1", "item3", "item4"})
+}
+
+// runnerStub is a stub to replace a runner.
+type runnerStub struct {
+	profile         *specs.LinuxSeccomp
+	callsToFail     []string
+	totalExecutions int
+	failAlways      bool
+}
+
+func (r *runnerStub) RunWithSeccomp(profile *specs.LinuxSeccomp) error {
+	r.totalExecutions++
+	r.profile = profile
+
+	if r.shouldFail() {
+		return errors.New("could not load container")
+	}
+
+	return nil
+}
+
+// forces failures every time a system call on r.callsToFail is not
+// in the profile being currently executed.
+func (r *runnerStub) shouldFail() bool {
+	if r.failAlways {
+		return true
+	}
+
+	if r.profile != nil {
+		for _, a := range r.callsToFail {
+			contains := false
+			for _, n := range r.profile.Syscalls[0].Names {
+				if a == n {
+					contains = true
+				}
+			}
+
+			if !contains {
+				return true
+			}
+		}
+	}
+
+	return false
 }
