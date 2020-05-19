@@ -11,6 +11,7 @@ import (
 func TestDockerRunner_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
+		return
 	}
 
 	var wg sync.WaitGroup

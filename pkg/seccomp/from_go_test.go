@@ -9,6 +9,11 @@ import (
 )
 
 func TestGetSystemCalls_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping tests in short mode.")
+		return
+	}
+
 	assertThat := func(assumption, filePath string,
 		expected *specs.LinuxSyscall, expectedErr error) {
 

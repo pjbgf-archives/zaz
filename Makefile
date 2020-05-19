@@ -44,12 +44,12 @@ go-clean:
 test: go-test
 go-test:
 	@echo "  >  Running short tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly -short -race ./...
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -v -mod=readonly -short -race ./...
 
 test-all: go-test-all
 go-test-all:
 	@echo "  >  Running all tests"
-	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -mod=readonly ./...
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go test -v -mod=readonly ./...
 
 go-test-coverage:
 	@echo "  >  Running tests"
