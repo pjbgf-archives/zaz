@@ -3,7 +3,6 @@ package seccomp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -53,7 +52,7 @@ func (r *DockerRunner) ensureImageWasPulled(image string) error {
 		}
 	}
 
-	return errors.New("image could not be pulled")
+	return ErrImageCouldNotBePulled
 }
 
 func (r *DockerRunner) getFullTag(image string) string {
@@ -107,19 +106,19 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 			}
 		case sts := <-statusCh:
 			if sts.StatusCode > 0 {
-				return fmt.Errorf("error on status channel")
+				return ErrCannotFetchContainerStatus
 			}
 		case <-time.After(executionTimeout):
 			go cli.ContainerStop(ctx, resp.ID, nil)
-			return fmt.Errorf("container execution timed out")
+			return ErrContainerExecutionTimeout
 		}
 
 		status, err := cli.ContainerInspect(ctx, resp.ID)
 		if err != nil {
-			return fmt.Errorf("error running container. err: %v", err)
+			return fmt.Errorf("%v: %v", ErrContainerExecutionFailure, err)
 		}
 		if status.State != nil && status.State.ExitCode > 0 {
-			return fmt.Errorf("error running container. exit code: %d", status.State.ExitCode)
+			return fmt.Errorf("%v: exit code %d", ErrContainerExecutionFailure, status.State.ExitCode)
 		}
 	}
 
