@@ -25,3 +25,9 @@ const ErrContainerExecutionTimeout = Error("container execution timed-out")
 
 // ErrContainerExecutionFailure is returned when a container execution fails.
 const ErrContainerExecutionFailure = Error("error running container")
+
+// ErrInvalidTemplateName is returned when a invalid template name is used.
+const ErrInvalidTemplateName = Error("invalid template name")
+
+// ErrInvalidSyntax is returned when an invalid syntax is used.
+const ErrInvalidSyntax = Error("invalid syntax")
