@@ -80,7 +80,8 @@ func TestCli_GetCommand(t *testing.T) {
 		should.HaveSameType(expected, cmdGot, assumption)
 	}
 
-	assertThat("should get 'brute-force' subcommand", "zaz seccomp docker alpine", &bruteForce{}, nil)
+	assertThat("should get 'template' subcommand", "zaz seccomp template web", &seccompTemplate{}, nil)
+	assertThat("should get 'brute-force' subcommand", "zaz seccomp docker alpine", &seccompBruteForce{}, nil)
 	assertThat("should get 'from-go' subcommand", "zaz seccomp ../../test/simple-app", &seccompFromGo{}, nil)
 	assertThat("should get 'from-log' subcommand", "zaz seccomp --log-file=../../test/syslog 123", &seccompFromLog{}, nil)
 	assertThat("should error for invalid command", "zaz something", nil, errors.New("invalid syntax"))

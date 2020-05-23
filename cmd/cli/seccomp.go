@@ -25,6 +25,8 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 			return newSeccompBruteForce(args[1:])
 		case "verify":
 			return newSeccompVerify(args[1:])
+		case "template":
+			return newSeccompTemplate(args[1:])
 		default:
 			lastArg := args[len(args)-1:]
 			if _, err := strconv.Atoi(lastArg[0]); err == nil {
@@ -200,16 +202,16 @@ func (s *seccompFromGo) run(output io.Writer) error {
 	return s.processSource(output, s.source, s.errorWhenEmpty)
 }
 
-type bruteForce struct {
+type seccompBruteForce struct {
 	processSource  func(io.Writer, seccomp.SyscallsSource, bool) error
 	source         seccomp.SyscallsSource
 	errorWhenEmpty bool
 }
 
-func newSeccompBruteForce(args []string) (*bruteForce, error) {
+func newSeccompBruteForce(args []string) (*seccompBruteForce, error) {
 	image, command, err := parseBruteForceFlags(args)
 	if err != nil {
-		return &bruteForce{}, err
+		return &seccompBruteForce{}, err
 	}
 
 	var runner seccomp.BruteForceRunner
@@ -218,7 +220,7 @@ func newSeccompBruteForce(args []string) (*bruteForce, error) {
 		return nil, err
 	}
 
-	return &bruteForce{
+	return &seccompBruteForce{
 		processSeccompSource,
 		seccomp.NewBruteForceSource(runner),
 		true}, nil
@@ -238,8 +240,41 @@ func parseBruteForceFlags(args []string) (image, command string, err error) {
 	return
 }
 
-func (s *bruteForce) run(output io.Writer) error {
+func (s *seccompBruteForce) run(output io.Writer) error {
 	return s.processSource(output, s.source, s.errorWhenEmpty)
+}
+
+type seccompTemplate struct {
+	name string
+}
+
+func newSeccompTemplate(args []string) (*seccompTemplate, error) {
+	name, err := parseTemplateFlags(args)
+	if err != nil {
+		return nil, err
+	}
+
+	return &seccompTemplate{name}, nil
+}
+
+func (s *seccompTemplate) run(output io.Writer) error {
+	var templateName seccomp.ProfileTemplate
+	if s.name == "web" {
+		templateName = seccomp.WebTemplate
+	}
+	templateName = seccomp.ProfileTemplate(s.name)
+
+	source := seccomp.NewSyscallsFromTemplate(templateName)
+	return processSeccompSource(output, source, false)
+}
+
+func parseTemplateFlags(args []string) (name string, err error) {
+	if len(args) != 2 {
+		err = errInvalidSyntax
+		return
+	}
+	name = args[1]
+	return
 }
 
 func processSeccompSource(output io.Writer, source seccomp.SyscallsSource, errorWhenEmpty bool) error {
