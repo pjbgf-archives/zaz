@@ -98,6 +98,7 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 			return err
 		}
 
+		timeout := time.After(executionTimeout)
 		statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 		select {
 		case err := <-errCh:
@@ -108,7 +109,7 @@ func (r *DockerRunner) RunWithSeccomp(profile *specs.LinuxSeccomp) (err error) {
 			if sts.StatusCode > 0 {
 				return ErrCannotFetchContainerStatus
 			}
-		case <-time.After(executionTimeout):
+		case <-timeout:
 			go cli.ContainerStop(ctx, resp.ID, nil)
 			return ErrContainerExecutionTimeout
 		}
