@@ -79,9 +79,18 @@ func TestMain_ErrorCodes(t *testing.T) {
 
 	assertThat("should exit with code 1 if no args provided", "zaz",
 		"exit status 1", "Usage:\n\tzaz seccomp [command] [flags]\nerror: invalid syntax\n")
-	assertThat("should support return error code when empty profile",
+
+	assertThat("should return error code when empty profile",
 		"zaz seccomp --error-when-empty --log-file=\"../test/syslog\" 1",
 		"exit status 2", "error: no system calls found\n")
+
+	assertThat("should return error code when invalid template",
+		"zaz seccomp template non-existent-template",
+		"exit status 1", "error: invalid template name\n")
+
+	assertThat("should return error code when verifying file with high-risk calls",
+		"zaz seccomp verify ../test/highrisk-profile.json",
+		"exit status 1", "error: profile allows high-risk system calls\n")
 }
 
 func TestMain_ErrorCodes_Inception(t *testing.T) {

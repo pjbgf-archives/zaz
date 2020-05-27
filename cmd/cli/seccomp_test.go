@@ -28,7 +28,7 @@ func TestNewSeccompSubCommand(t *testing.T) {
 	assertThat("should return seccompVerify command", "seccomp verify ../../test/simple-app", &seccompVerify{}, nil)
 	assertThat("should return seccompFromGo command", "seccomp ../../test/simple-app", &seccompFromGo{}, nil)
 	assertThat("should return seccompFromLog command", "seccomp --log-file=../../test/syslog 123", &seccompFromLog{}, nil)
-	assertThat("should return error for invalid command", "seccomp blah", nil, errors.New("command not found"))
+	assertThat("should return error for invalid command", "seccomp blah", &seccompUsage{}, nil)
 }
 
 func TestNewSeccompFromLog(t *testing.T) {
@@ -120,6 +120,26 @@ func TestNewSeccompFromGo(t *testing.T) {
 		nil, errors.New("file 'test/simple-app2' not found"))
 }
 
+func TestNewSeccompTemplate(t *testing.T) {
+	assertThat := func(assumption string, args []string, expected *seccompTemplate, expectedErr error) {
+		should := should.New(t)
+
+		actual, err := newSeccompTemplate(args)
+
+		should.BeEqual(expectedErr, err, assumption)
+		should.BeEqual(expected, actual, assumption)
+	}
+
+	assertThat("should error when less than one argument", []string{},
+		nil, errors.New("invalid syntax"))
+	assertThat("should error when less than one argument", []string{"template"},
+		nil, errors.New("invalid syntax"))
+	assertThat("should error when more than one argument", []string{"template", "web", "something else"},
+		nil, errors.New("invalid syntax"))
+	assertThat("should return template with name set", []string{"template", "templatename"},
+		&seccompTemplate{name: "templatename"}, nil)
+}
+
 func TestSeccompFromGoRun(t *testing.T) {
 	assertThat := func(assumption string, command string,
 		injectedCalls []string, expected *specs.LinuxSyscall, expectedErr error) {
@@ -173,7 +193,7 @@ func TestProcessSeccompSource(t *testing.T) {
 }
 
 func TestNewBruteForce(t *testing.T) {
-	assertThat := func(assumption string, args []string, expected *bruteForce, expectedErr error) {
+	assertThat := func(assumption string, args []string, expected *seccompBruteForce, expectedErr error) {
 		should := should.New(t)
 
 		actual, err := newSeccompBruteForce(args)
@@ -184,10 +204,10 @@ func TestNewBruteForce(t *testing.T) {
 
 	assertThat("should error when receives zero arguments",
 		[]string{},
-		&bruteForce{}, errors.New("invalid syntax"))
+		&seccompBruteForce{}, errors.New("invalid syntax"))
 	assertThat("should error when receives one argument",
 		[]string{"docker"},
-		&bruteForce{}, errors.New("invalid syntax"))
+		&seccompBruteForce{}, errors.New("invalid syntax"))
 }
 
 func TestParseBruteForceFlags(t *testing.T) {

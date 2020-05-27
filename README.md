@@ -60,6 +60,14 @@ Validates a seccomp profile, returning a list of high-risk system calls being al
 zaz seccomp verify no-highrisk-profile.json
 ```
 
+### zaz seccomp template web
+
+Returns a pre-defined seccomp profile for web applications.
+
+```sh
+zaz seccomp template web
+```
+
 
 ## License
 
