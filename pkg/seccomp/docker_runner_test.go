@@ -3,7 +3,9 @@ package seccomp
 import (
 	"archive/tar"
 	"bytes"
+	"io"
 	"log"
+	"os"
 	"sync"
 	"testing"
 
@@ -12,6 +14,7 @@ import (
 	"context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -57,24 +60,14 @@ func TestDockerRunner_Integration(t *testing.T) {
 
 	wg.Add(5)
 
-	go assertThat("should run container with empty profile",
-		"alpine",
+	removeImageFromCache("alpine:latest")
+	assertThat("should pull image if does not exist locally",
+		"alpine:latest",
 		"echo hi",
 		nil,
-		false)
-
-	go assertThat("should run container without command",
-		"alpine",
-		"",
-		nil,
-		false)
-
-	go assertThat("should error if profile is too restrictive",
-		"alpine",
-		"echo hi",
-		&specs.LinuxSeccomp{DefaultAction: specs.ActErrno},
 		true)
 
+	removeImageFromCache(localImageNameLatest)
 	buildTestImage()
 	go assertThat("should support use of local images",
 		localImageName,
@@ -88,7 +81,40 @@ func TestDockerRunner_Integration(t *testing.T) {
 		nil,
 		false)
 
+	go assertThat("should run container with command",
+		localImageNameLatest,
+		"echo hi",
+		nil,
+		false)
+
+	go assertThat("should error if profile is too restrictive",
+		localImageNameLatest,
+		"echo hi",
+		&specs.LinuxSeccomp{DefaultAction: specs.ActErrno},
+		true)
+
 	wg.Wait()
+}
+
+func removeImageFromCache(image string) {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic("could not remote image from cache")
+	}
+
+	imgs, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters.NewArgs(filters.KeyValuePair{Key: "dangling", Value: "false"})})
+	if err != nil {
+		panic("could not list images")
+	}
+
+	for _, img := range imgs {
+		for _, repos := range img.RepoTags {
+			if repos == image {
+				cli.ImageRemove(ctx, img.ID, types.ImageRemoveOptions{Force: true})
+			}
+		}
+	}
 }
 
 func buildTestImage() {
@@ -96,6 +122,10 @@ func buildTestImage() {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic("cannot build local image")
+	}
+
+	if _, err = cli.ImagePull(ctx, "alpine:latest", types.ImagePullOptions{}); err != nil {
+		panic("cannot pull alpine:latest")
 	}
 
 	buf := new(bytes.Buffer)
@@ -129,4 +159,8 @@ func buildTestImage() {
 		log.Fatal(err, " :unable to build docker image")
 	}
 	defer imageBuildResponse.Body.Close()
+	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
+	if err != nil {
+		log.Fatal(err, " :unable to read image build response")
+	}
 }
