@@ -13,6 +13,14 @@ import (
 )
 
 var (
+	seccompUsageMessage string = `Usage:
+	zaz seccomp docker IMAGE [COMMAND]
+	zaz seccomp verify SECCOMP-PROFILE-PATH
+	zaz seccomp template TEMPLATE-NAME
+	zaz seccomp GO-BINARY
+	zaz seccomp --log-file=SYSLOG-PATH PID
+`
+
 	defaultSysLogPath  string = "/var/log/syslog"
 	errNoSyscallsFound error  = errors.New("no system calls found")
 )
@@ -37,7 +45,15 @@ func newSeccompSubCommand(args []string) (cliCommand, error) {
 		}
 	}
 
-	return nil, errors.New("command not found")
+	return &seccompUsage{}, nil
+}
+
+type seccompUsage struct{}
+
+func (s *seccompUsage) run(output io.Writer) error {
+	/* #nosec */
+	_, _ = output.Write([]byte(seccompUsageMessage))
+	return nil
 }
 
 type seccompFromLog struct {
